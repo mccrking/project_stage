@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Rapports - Central Danone{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- En-tête -->
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-file-alt me-2"></i>
+                    Rapports
+                </h1>
+                <p class="text-muted mb-0">Génération et gestion des rapports de supervision</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Génération de rapports -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-plus me-2"></i>
+                Générer un nouveau rapport
+            </div>
+            <div class="card-body">
+                <form id="report-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report-type" class="form-label">Type de rapport</label>
+                            <select class="form-select" id="report-type" required>
+                                <option value="daily">Rapport journalier</option>
+                                <option value="custom">Rapport personnalisé</option>
+                                <option value="weekly">Rapport hebdomadaire</option>
+                                <option value="monthly">Rapport mensuel</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="report-format" class="form-label">Format</label>
+                            <select class="form-select" id="report-format" required>
+                                <option value="pdf">PDF</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date-from" class="form-label">Date de début</label>
+                            <input type="date" class="form-control" id="date-from">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="date-to" class="form-label">Date de fin</label>
+                            <input type="date" class="form-control" id="date-to">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="report-description" class="form-label">Description (optionnel)</label>
+                        <textarea class="form-control" id="report-description" rows="3" 
+                                  placeholder="Description du rapport..."></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="btn-generate">
+                            <i class="fas fa-download me-2"></i>
+                            Générer le rapport
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btn-preview">
+                            <i class="fas fa-eye me-2"></i>
+                            Aperçu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des rapports -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2"></i>
+                Statistiques des rapports
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="stat-number text-primary" id="total-reports">0</div>
+                        <div class="stat-label">Total rapports</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-number text-success" id="reports-this-month">0</div>
+                        <div class="stat-label">Ce mois</div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Types de rapports</h6>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Journaliers</span>
+                        <span class="badge bg-primary" id="daily-count">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Hebdomadaires</span>
+                        <span class="badge bg-info" id="weekly-count">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>Mensuels</span>
+                        <span class="badge bg-warning" id="monthly-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des rapports -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>
+                    Rapports disponibles
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" id="btn-refresh-reports">
+                        <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="report-filter" id="filter-all-reports" checked>
+                        <label class="btn btn-outline-secondary" for="filter-all-reports">Tous</label>
+                        
+                        <input type="radio" class="btn-check" name="report-filter" id="filter-pdf">
+                        <label class="btn btn-outline-secondary" for="filter-pdf">PDF</label>
+                        
+                        <input type="radio" class="btn-check" name="report-filter" id="filter-excel">
+                        <label class="btn btn-outline-secondary" for="filter-excel">Excel</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Nom du fichier</th>
+                                <th>Type</th>
+                                <th>Taille</th>
+                                <th>Date de création</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-tbody">
+                            <!-- Le contenu sera chargé dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'aperçu -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>
+                    Aperçu du rapport
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="preview-content">
+                    <!-- Le contenu sera chargé dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialisation des dates
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    document.getElementById('date-from').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('date-to').value = today.toISOString().split('T')[0];
+    
+    // Charger la liste des rapports
+    loadReports();
+    
+    // Gestion du formulaire de génération
+    document.getElementById('report-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            type: document.getElementById('report-type').value,
+            format: document.getElementById('report-format').value,
+            date_from: document.getElementById('date-from').value,
+            date_to: document.getElementById('date-to').value,
+            description: document.getElementById('report-description').value
+        };
+        
+        generateReport(formData);
+    });
+    
+    // Aperçu du rapport
+    document.getElementById('btn-preview').addEventListener('click', function() {
+        const formData = {
+            type: document.getElementById('report-type').value,
+            format: document.getElementById('report-format').value,
+            date_from: document.getElementById('date-from').value,
+            date_to: document.getElementById('date-to').value,
+            description: document.getElementById('report-description').value
+        };
+        
+        showPreview(formData);
+    });
+    
+    // Actualisation de la liste
+    document.getElementById('btn-refresh-reports').addEventListener('click', function() {
+        loadReports();
+    });
+    
+    // Filtrage des rapports
+    document.querySelectorAll('input[name="report-filter"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            filterReports(this.id);
+        });
+    });
+    
+    function generateReport(formData) {
+        const button = document.getElementById('btn-generate');
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Génération...';
+        button.disabled = true;
+        
+        fetch('/api/reports/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                // Télécharger le fichier
+                window.open(`/download/${data.filename}`, '_blank');
+                // Recharger la liste
+                setTimeout(() => loadReports(), 1000);
+            } else {
+                showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors de la génération: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    function showPreview(formData) {
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        const content = document.getElementById('preview-content');
+        
+        content.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p>Préparation de l'aperçu...</p>
+            </div>
+        `;
+        
+        modal.show();
+        
+        // Simuler la génération d'un aperçu
+        setTimeout(() => {
+            content.innerHTML = `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Aperçu du rapport</h6>
+                    <p><strong>Type:</strong> ${formData.type}</p>
+                    <p><strong>Format:</strong> ${formData.format.toUpperCase()}</p>
+                    <p><strong>Période:</strong> ${formData.date_from} à ${formData.date_to}</p>
+                    ${formData.description ? `<p><strong>Description:</strong> ${formData.description}</p>` : ''}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Contenu prévu:</h6>
+                        <ul>
+                            <li>Statistiques générales</li>
+                            <li>Liste des équipements</li>
+                            <li>Historique des scans</li>
+                            <li>Graphiques de disponibilité</li>
+                            <li>Alertes et incidents</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Informations techniques:</h6>
+                        <ul>
+                            <li>Généré automatiquement</li>
+                            <li>Données en temps réel</li>
+                            <li>Format professionnel</li>
+                            <li>Prêt pour archivage</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }, 2000);
+    }
+    
+    function loadReports() {
+        // Charger les rapports depuis l'API
+        fetch('/api/reports/list')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayReports(data.reports);
+                    updateStatistics(data.reports);
+                } else {
+                    showAlert('danger', 'Erreur lors du chargement des rapports: ' + data.error);
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Erreur lors du chargement des rapports: ' + error.message);
+                // En cas d'erreur, afficher un tableau vide
+                displayReports([]);
+                updateStatistics([]);
+            });
+    }
+    
+    function displayReports(reports) {
+        const tbody = document.getElementById('reports-tbody');
+        tbody.innerHTML = '';
+        
+        reports.forEach(report => {
+            const row = document.createElement('tr');
+            row.className = 'report-row';
+            row.dataset.format = report.format;
+            
+            row.innerHTML = `
+                <td>
+                    <i class="fas fa-file-${report.format === 'pdf' ? 'pdf' : 'excel'} me-2 text-${report.format === 'pdf' ? 'danger' : 'success'}"></i>
+                    <strong>${report.filename}</strong>
+                </td>
+                <td>
+                    <span class="badge bg-${report.format === 'pdf' ? 'danger' : 'success'}">${report.type}</span>
+                </td>
+                <td>${report.size}</td>
+                <td>${formatDate(report.created)}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary btn-download" 
+                                data-filename="${report.filename}"
+                                title="Télécharger">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-preview-report"
+                                data-filename="${report.filename}"
+                                title="Aperçu">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-delete-report"
+                                data-filename="${report.filename}"
+                                title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        // Ajouter les événements aux boutons
+        addReportButtonEvents();
+    }
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    function addReportButtonEvents() {
+        // Téléchargement
+        document.querySelectorAll('.btn-download').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                window.open(`/download/${filename}`, '_blank');
+            });
+        });
+        
+        // Suppression
+        document.querySelectorAll('.btn-delete-report').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                if (confirm(`Êtes-vous sûr de vouloir supprimer "${filename}" ?`)) {
+                    deleteReport(filename);
+                }
+            });
+        });
+    }
+    
+    function deleteReport(filename) {
+        fetch(`/api/reports/delete/${filename}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Rapport supprimé avec succès');
+                loadReports();
+            } else {
+                showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors de la suppression: ' + error.message);
+        });
+    }
+    
+    function filterReports(filterId) {
+        const rows = document.querySelectorAll('.report-row');
+        const filter = filterId.replace('filter-', '').replace('-reports', '');
+        
+        rows.forEach(row => {
+            const format = row.dataset.format;
+            
+            if (filter === 'all' || format === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    function updateStatistics(reports) {
+        const totalReports = reports.length;
+        const thisMonth = new Date().getMonth();
+        const reportsThisMonth = reports.filter(r => {
+            const reportMonth = new Date(r.created).getMonth();
+            return reportMonth === thisMonth;
+        }).length;
+        
+        const dailyCount = reports.filter(r => r.report_type === 'Journalier').length;
+        const weeklyCount = reports.filter(r => r.report_type === 'Hebdomadaire').length;
+        const monthlyCount = reports.filter(r => r.report_type === 'Mensuel').length;
+        
+        document.getElementById('total-reports').textContent = totalReports;
+        document.getElementById('reports-this-month').textContent = reportsThisMonth;
+        document.getElementById('daily-count').textContent = dailyCount;
+        document.getElementById('weekly-count').textContent = weeklyCount;
+        document.getElementById('monthly-count').textContent = monthlyCount;
+    }
+});
+</script>
+{% endblock %} 

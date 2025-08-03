@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Central Danone - Supervision Réseau{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #0066cc;
+            --secondary-color: #004d99;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+        }
+        
+        .status-online {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .status-offline {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        .device-card {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .device-card.offline {
+            border-left-color: var(--danger-color);
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .alert-card {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .btn-scan {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+        
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,102,204,0.3);
+            color: white;
+        }
+        
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(0,102,204,0.05);
+        }
+        
+        .badge-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link {
+            color: var(--dark-color);
+            border-radius: 8px;
+            margin: 0.25rem 0;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.5rem;
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .card-body {
+                padding: 1rem;
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-network-wired me-2"></i>
+                Central Danone - Supervision Réseau
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" id="nav-dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Tableau de bord
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ai-dashboard" id="nav-ai-dashboard">
+                            <i class="fas fa-brain"></i> IA Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/alerts" id="nav-alerts">
+                            <i class="fas fa-bell"></i> Alertes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports" id="nav-reports">
+                            <i class="fas fa-file-alt"></i> Rapports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings" id="nav-settings">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Menu utilisateur et notifications -->
+                <ul class="navbar-nav">
+                    <!-- Notifications en temps réel -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge bg-danger" id="notification-badge" style="display: none;">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                            <li><h6 class="dropdown-header">Notifications Central Danone</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <div id="notifications-list">
+                                <li class="dropdown-item text-muted">Aucune notification</li>
+                            </div>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#" id="clear-notifications">Effacer toutes</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Menu utilisateur -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>
+                            {% if current_user.is_authenticated %}
+                                {{ current_user.username }}
+                                <span class="badge bg-{{ 'primary' if current_user.role == 'admin' else 'secondary' }} ms-1">
+                                    {{ 'Admin' if current_user.role == 'admin' else 'Technicien' }}
+                                </span>
+                            {% else %}
+                                Utilisateur
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><h6 class="dropdown-header">Compte utilisateur</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('change_password') }}">
+                                    <i class="fas fa-key me-2"></i>Changer le mot de passe
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2">
+                <div class="sidebar p-3">
+                    <h6 class="text-muted mb-3">MENU</h6>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/" id="sidebar-dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Tableau de bord
+                        </a>
+                        <a class="nav-link" href="/ai-dashboard" id="sidebar-ai-dashboard">
+                            <i class="fas fa-brain"></i> IA Dashboard
+                        </a>
+                        <a class="nav-link" href="/alerts" id="sidebar-alerts">
+                            <i class="fas fa-bell"></i> Alertes
+                        </a>
+                        <a class="nav-link" href="/reports" id="sidebar-reports">
+                            <i class="fas fa-file-alt"></i> Rapports
+                        </a>
+                        <a class="nav-link" href="/settings" id="sidebar-settings">
+                            <i class="fas fa-cog"></i> Paramètres
+                        </a>
+                    </nav>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="text-muted mb-3">ACTIONS RAPIDES</h6>
+                    <button class="btn btn-scan w-100 mb-2" id="btn-manual-scan">
+                        <i class="fas fa-search"></i> Scan manuel
+                    </button>
+                    <button class="btn btn-outline-primary w-100" id="btn-generate-report">
+                        <i class="fas fa-download"></i> Générer rapport
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Contenu principal -->
+            <div class="col-lg-10">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-shield-alt me-2"></i>
+                Système de supervision réseau Central Danone - Développé pour la continuité de production
+            </p>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div class="modal fade" id="scanModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-search me-2"></i>Scan réseau en cours
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Scanning...</span>
+                    </div>
+                    <p class="mb-0">Analyse du réseau en cours, veuillez patienter...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts communs -->
+    <script>
+        // Marquer la page active dans la navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Gestion du scan manuel
+            document.getElementById('btn-manual-scan').addEventListener('click', function() {
+                const modal = new bootstrap.Modal(document.getElementById('scanModal'));
+                modal.show();
+                
+                fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        network_range: '192.168.1.0/24'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    modal.hide();
+                    if (data.success) {
+                        showAlert('success', data.message);
+                        // Recharger la page pour mettre à jour les données
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showAlert('danger', data.message);
+                    }
+                })
+                .catch(error => {
+                    modal.hide();
+                    showAlert('danger', 'Erreur lors du scan: ' + error.message);
+                });
+            });
+            
+            // Gestion de la génération de rapport
+            document.getElementById('btn-generate-report').addEventListener('click', function() {
+                const button = this;
+                const originalText = button.innerHTML;
+                
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Génération...';
+                button.disabled = true;
+                
+                fetch('/api/reports/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'daily',
+                        format: 'pdf'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', data.message);
+                        // Télécharger le fichier
+                        window.open(`/download/${data.filename}`, '_blank');
+                    } else {
+                        showAlert('danger', data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Erreur lors de la génération: ' + error.message);
+                })
+                .finally(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            });
+        });
+        
+        // Fonction pour afficher les alertes
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-dismiss après 5 secondes
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Fonction pour formater les dates
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR');
+        }
+        
+        // Fonction pour rafraîchir les données
+        function refreshData() {
+            // Cette fonction peut être surchargée dans les pages spécifiques
+            window.location.reload();
+        }
+        
+        // Auto-refresh toutes les 30 secondes
+        setInterval(refreshData, 30000);
+        
+        // Système de notifications en temps réel
+        let notificationInterval;
+        
+        function loadNotifications() {
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    updateNotificationBadge(data.unread_count);
+                    updateNotificationList(data.notifications);
+                })
+                .catch(error => console.error('Erreur chargement notifications:', error));
+        }
+        
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+        
+        function updateNotificationList(notifications) {
+            const list = document.getElementById('notifications-list');
+            if (!list) return;
+            
+            if (notifications.length === 0) {
+                list.innerHTML = '<li class="dropdown-item text-muted">Aucune notification</li>';
+                return;
+            }
+            
+            list.innerHTML = notifications.map(notification => `
+                <li class="dropdown-item ${notification.read ? '' : 'fw-bold'}" 
+                    onclick="markNotificationRead(${notification.id})">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-${getNotificationIcon(notification.type)} text-${getNotificationColor(notification.type)}"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-2">
+                            <div class="small">${notification.message}</div>
+                            <div class="text-muted small">${formatTime(notification.timestamp)}</div>
+                        </div>
+                    </div>
+                </li>
+            `).join('');
+        }
+        
+        function getNotificationIcon(type) {
+            const icons = {
+                'info': 'info-circle',
+                'warning': 'exclamation-triangle',
+                'danger': 'times-circle',
+                'success': 'check-circle'
+            };
+            return icons[type] || 'bell';
+        }
+        
+        function getNotificationColor(type) {
+            const colors = {
+                'info': 'info',
+                'warning': 'warning',
+                'danger': 'danger',
+                'success': 'success'
+            };
+            return colors[type] || 'secondary';
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'À l\'instant';
+            if (diff < 3600000) return `Il y a ${Math.floor(diff/60000)} min`;
+            if (diff < 86400000) return `Il y a ${Math.floor(diff/3600000)}h`;
+            return date.toLocaleDateString();
+        }
+        
+        function markNotificationRead(notificationId) {
+            fetch(`/api/notifications/mark-read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadNotifications(); // Recharger les notifications
+                }
+            })
+            .catch(error => console.error('Erreur marquer notification lue:', error));
+        }
+        
+        function clearAllNotifications() {
+            fetch('/api/notifications/clear', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadNotifications(); // Recharger les notifications
+                }
+            })
+            .catch(error => console.error('Erreur effacer notifications:', error));
+        }
+        
+        // Initialisation des notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            // Charger les notifications au démarrage
+            loadNotifications();
+            
+            // Mettre à jour toutes les 30 secondes
+            notificationInterval = setInterval(loadNotifications, 30000);
+            
+            // Gestionnaire pour effacer toutes les notifications
+            const clearBtn = document.getElementById('clear-notifications');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    clearAllNotifications();
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

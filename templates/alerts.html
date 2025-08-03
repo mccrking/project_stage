@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes - Central Danone{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- En-tête -->
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Alertes
+                </h1>
+                <p class="text-muted mb-0">Gestion des alertes et notifications système</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger" id="btn-resolve-all">
+                    <i class="fas fa-check-double me-2"></i>Résoudre tout
+                </button>
+                <button class="btn btn-outline-primary" id="btn-refresh-alerts">
+                    <i class="fas fa-sync-alt me-2"></i>Actualiser
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques des alertes -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-number text-primary">{{ total_alerts }}</div>
+                <div class="stat-label">Total alertes</div>
+                <i class="fas fa-bell text-muted mt-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-number text-danger">{{ active_count }}</div>
+                <div class="stat-label">Alertes actives</div>
+                <i class="fas fa-exclamation-triangle text-danger mt-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-number text-warning">{{ critical_count }}</div>
+                <div class="stat-label">Critiques</div>
+                <i class="fas fa-fire text-warning mt-2"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-number text-success">{{ total_alerts - active_count }}</div>
+                <div class="stat-label">Résolues</div>
+                <i class="fas fa-check-circle text-success mt-2"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes actives -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Alertes actives ({{ active_count }})
+            </div>
+            <div class="card-body p-0">
+                {% if active_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="select-all-alerts">
+                                </th>
+                                <th>Priorité</th>
+                                <th>Type</th>
+                                <th>Équipement</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in active_alerts %}
+                            <tr class="alert-row" data-alert-id="{{ alert.id }}">
+                                <td>
+                                    <input type="checkbox" class="alert-checkbox" value="{{ alert.id }}">
+                                </td>
+                                <td>
+                                    {% if alert.priority == 'critical' %}
+                                        <span class="badge bg-danger">Critique</span>
+                                    {% elif alert.priority == 'high' %}
+                                        <span class="badge bg-warning">Élevée</span>
+                                    {% elif alert.priority == 'medium' %}
+                                        <span class="badge bg-info">Moyenne</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Faible</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ alert.alert_type }}</span>
+                                </td>
+                                <td>
+                                    {% set device = alert.device %}
+                                    {% if device %}
+                                        <strong>{{ device.ip }}</strong><br>
+                                        <small class="text-muted">{{ device.hostname or 'N/A' }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Équipement supprimé</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ alert.message }}</td>
+                                <td>{{ alert.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-success btn-resolve-alert" 
+                                            data-alert-id="{{ alert.id }}">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>Aucune alerte active</h5>
+                    <p class="text-muted">Toutes les alertes ont été résolues</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes résolues récentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>
+                Alertes résolues récentes
+            </div>
+            <div class="card-body p-0">
+                {% if resolved_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Priorité</th>
+                                <th>Type</th>
+                                <th>Équipement</th>
+                                <th>Message</th>
+                                <th>Résolue le</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in resolved_alerts %}
+                            <tr>
+                                <td>
+                                    {% if alert.priority == 'critical' %}
+                                        <span class="badge bg-danger">Critique</span>
+                                    {% elif alert.priority == 'high' %}
+                                        <span class="badge bg-warning">Élevée</span>
+                                    {% elif alert.priority == 'medium' %}
+                                        <span class="badge bg-info">Moyenne</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Faible</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ alert.alert_type }}</span>
+                                </td>
+                                <td>
+                                    {% set device = alert.device %}
+                                    {% if device %}
+                                        <strong>{{ device.ip }}</strong><br>
+                                        <small class="text-muted">{{ device.hostname or 'N/A' }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Équipement supprimé</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ alert.message }}</td>
+                                <td>{{ alert.resolved_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                    <h5>Aucune alerte résolue</h5>
+                    <p class="text-muted">Historique des alertes résolues</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Résolution d'une alerte individuelle
+    document.querySelectorAll('.btn-resolve-alert').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alertId = this.dataset.alertId;
+            resolveAlert(alertId);
+        });
+    });
+    
+    // Sélection de toutes les alertes
+    document.getElementById('select-all-alerts').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.alert-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    // Résolution de toutes les alertes sélectionnées
+    document.getElementById('btn-resolve-all').addEventListener('click', function() {
+        const selectedAlerts = Array.from(document.querySelectorAll('.alert-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedAlerts.length > 0) {
+            resolveMultipleAlerts(selectedAlerts);
+        } else {
+            showAlert('warning', 'Veuillez sélectionner au moins une alerte');
+        }
+    });
+    
+    // Actualisation des alertes
+    document.getElementById('btn-refresh-alerts').addEventListener('click', function() {
+        window.location.reload();
+    });
+});
+
+function resolveAlert(alertId) {
+    fetch(`/api/alert/${alertId}/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', 'Alerte résolue avec succès');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur lors de la résolution: ' + error.message);
+    });
+}
+
+function resolveMultipleAlerts(alertIds) {
+    fetch('/api/alerts/bulk-resolve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            alert_ids: alertIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', data.message);
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur lors de la résolution: ' + error.message);
+    });
+}
+</script>
+{% endblock %} 
