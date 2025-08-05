@@ -1,0 +1,177 @@
+{
+  "test_date": "2025-08-03T22:18:11.229096",
+  "total_tests": 28,
+  "passed_tests": 28,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Table hover",
+      "status": "PASS",
+      "message": "Style table-hover trouvé",
+      "timestamp": "2025-08-03T22:18:11.220530"
+    },
+    {
+      "test": "Table hover base",
+      "status": "PASS",
+      "message": "Style table-hover base trouvé",
+      "timestamp": "2025-08-03T22:18:11.220626"
+    },
+    {
+      "test": "Badge success",
+      "status": "PASS",
+      "message": "Style badge success trouvé",
+      "timestamp": "2025-08-03T22:18:11.220744"
+    },
+    {
+      "test": "Badge danger",
+      "status": "PASS",
+      "message": "Style badge danger trouvé",
+      "timestamp": "2025-08-03T22:18:11.220891"
+    },
+    {
+      "test": "Texte success",
+      "status": "PASS",
+      "message": "Style texte success trouvé",
+      "timestamp": "2025-08-03T22:18:11.221005"
+    },
+    {
+      "test": "Texte danger",
+      "status": "PASS",
+      "message": "Style texte danger trouvé",
+      "timestamp": "2025-08-03T22:18:11.221085"
+    },
+    {
+      "test": "Bouton primary",
+      "status": "PASS",
+      "message": "Style bouton primary trouvé",
+      "timestamp": "2025-08-03T22:18:11.221141"
+    },
+    {
+      "test": "Bouton info",
+      "status": "PASS",
+      "message": "Style bouton info trouvé",
+      "timestamp": "2025-08-03T22:18:11.221191"
+    },
+    {
+      "test": "Table hover dans dashboard.html",
+      "status": "PASS",
+      "message": "Classe table-hover trouvée",
+      "timestamp": "2025-08-03T22:18:11.222324"
+    },
+    {
+      "test": "Badges dans dashboard.html",
+      "status": "PASS",
+      "message": "Badges trouvés",
+      "timestamp": "2025-08-03T22:18:11.222439"
+    },
+    {
+      "test": "Boutons dans dashboard.html",
+      "status": "PASS",
+      "message": "Boutons outline trouvés",
+      "timestamp": "2025-08-03T22:18:11.222545"
+    },
+    {
+      "test": "Table hover dans alerts.html",
+      "status": "PASS",
+      "message": "Classe table-hover trouvée",
+      "timestamp": "2025-08-03T22:18:11.223405"
+    },
+    {
+      "test": "Badges dans alerts.html",
+      "status": "PASS",
+      "message": "Badges trouvés",
+      "timestamp": "2025-08-03T22:18:11.223547"
+    },
+    {
+      "test": "Boutons dans alerts.html",
+      "status": "PASS",
+      "message": "Boutons outline trouvés",
+      "timestamp": "2025-08-03T22:18:11.223700"
+    },
+    {
+      "test": "Table hover dans reports.html",
+      "status": "PASS",
+      "message": "Classe table-hover trouvée",
+      "timestamp": "2025-08-03T22:18:11.224570"
+    },
+    {
+      "test": "Badges dans reports.html",
+      "status": "PASS",
+      "message": "Badges trouvés",
+      "timestamp": "2025-08-03T22:18:11.224745"
+    },
+    {
+      "test": "Boutons dans reports.html",
+      "status": "PASS",
+      "message": "Boutons outline trouvés",
+      "timestamp": "2025-08-03T22:18:11.224878"
+    },
+    {
+      "test": "Table hover dans advanced_monitoring.html",
+      "status": "PASS",
+      "message": "Classe table-hover trouvée",
+      "timestamp": "2025-08-03T22:18:11.225301"
+    },
+    {
+      "test": "Badges dans advanced_monitoring.html",
+      "status": "PASS",
+      "message": "Badges trouvés",
+      "timestamp": "2025-08-03T22:18:11.225374"
+    },
+    {
+      "test": "Boutons dans advanced_monitoring.html",
+      "status": "PASS",
+      "message": "Boutons outline trouvés",
+      "timestamp": "2025-08-03T22:18:11.225471"
+    },
+    {
+      "test": "Variable --card-bg",
+      "status": "PASS",
+      "message": "Variable --card-bg définie",
+      "timestamp": "2025-08-03T22:18:11.225994"
+    },
+    {
+      "test": "Variable --text-primary",
+      "status": "PASS",
+      "message": "Variable --text-primary définie",
+      "timestamp": "2025-08-03T22:18:11.226175"
+    },
+    {
+      "test": "Variable --bg-tertiary",
+      "status": "PASS",
+      "message": "Variable --bg-tertiary définie",
+      "timestamp": "2025-08-03T22:18:11.226505"
+    },
+    {
+      "test": "Variable --danone-green",
+      "status": "PASS",
+      "message": "Variable --danone-green définie",
+      "timestamp": "2025-08-03T22:18:11.226583"
+    },
+    {
+      "test": "Variable --danone-red",
+      "status": "PASS",
+      "message": "Variable --danone-red définie",
+      "timestamp": "2025-08-03T22:18:11.226837"
+    },
+    {
+      "test": "Variable --danone-blue",
+      "status": "PASS",
+      "message": "Variable --danone-blue définie",
+      "timestamp": "2025-08-03T22:18:11.226998"
+    },
+    {
+      "test": "Variable --danone-light-blue",
+      "status": "PASS",
+      "message": "Variable --danone-light-blue définie",
+      "timestamp": "2025-08-03T22:18:11.227113"
+    },
+    {
+      "test": "Variable --text-muted",
+      "status": "PASS",
+      "message": "Variable --text-muted définie",
+      "timestamp": "2025-08-03T22:18:11.227217"
+    }
+  ]
+}

@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}IA Avancée - Central Danone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .ai-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .prediction-item {
+        border-left: 4px solid var(--danone-blue);
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--card-bg);
+        border-radius: 5px;
+    }
+    
+    .intrusion-item {
+        border-left: 4px solid var(--danone-red);
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--card-bg);
+        border-radius: 5px;
+    }
+    
+    .optimization-item {
+        border-left: 4px solid var(--danone-green);
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--card-bg);
+        border-radius: 5px;
+    }
+    
+    .trend-indicator {
+        font-size: 1.2em;
+        margin-left: 10px;
+    }
+    
+    .trend-up {
+        color: var(--danone-green);
+    }
+    
+    .trend-down {
+        color: var(--danone-red);
+    }
+    
+    .trend-stable {
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-brain text-primary me-2"></i>
+                    Intelligence Artificielle Avancée
+                </h1>
+                <div class="text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    Dernière mise à jour : <span id="last-update">{{ current_time }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques IA -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card ai-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line text-primary fa-2x mb-2"></i>
+                    <h5 class="card-title">Précision IA</h5>
+                    <h3 class="text-primary" id="ai-accuracy">--</h3>
+                    <small class="text-muted">Taux de précision</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card ai-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                    <h5 class="card-title">Intrusions Bloquées</h5>
+                    <h3 class="text-success" id="intrusions-blocked">--</h3>
+                    <small class="text-muted">Aujourd'hui</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card ai-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-cogs text-warning fa-2x mb-2"></i>
+                    <h5 class="card-title">Optimisations</h5>
+                    <h3 class="text-warning" id="optimizations-applied">--</h3>
+                    <small class="text-muted">Appliquées</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card ai-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-robot text-info fa-2x mb-2"></i>
+                    <h5 class="card-title">Modèles IA</h5>
+                    <h3 class="text-info" id="ai-models">--</h3>
+                    <small class="text-muted">Actifs</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Prédictions IA -->
+        <div class="col-md-6 mb-4">
+            <div class="card ai-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-crystal-ball me-2"></i>
+                        Prédictions IA
+                    </h5>
+                    <button class="btn btn-sm btn-primary" onclick="runPredictions()">
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Lancer
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="predictions-container">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Chargement des prédictions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Détection d'Intrusion -->
+        <div class="col-md-6 mb-4">
+            <div class="card ai-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Détection d'Intrusion
+                    </h5>
+                    <button class="btn btn-sm btn-danger" onclick="runIntrusionDetection()">
+                        <i class="fas fa-search me-1"></i>
+                        Scanner
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="intrusions-container">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Chargement des intrusions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Optimisations -->
+        <div class="col-md-6 mb-4">
+            <div class="card ai-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Optimisations Recommandées
+                    </h5>
+                    <button class="btn btn-sm btn-success" onclick="runOptimization()">
+                        <i class="fas fa-magic me-1"></i>
+                        Optimiser
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="optimizations-container">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Chargement des optimisations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyse des Tendances -->
+        <div class="col-md-6 mb-4">
+            <div class="card ai-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Analyse des Tendances
+                    </h5>
+                    <button class="btn btn-sm btn-info" onclick="runTrendAnalysis()">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        Analyser
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="trends-container">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                            <p>Chargement des tendances...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note: Le chatbot IA est maintenant disponible globalement via le bouton flottant en bas à droite -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let chatMessages = [];
+
+// Fonction pour mettre à jour l'heure
+function updateTime() {
+    const now = new Date();
+    document.getElementById('last-update').textContent = now.toLocaleString('fr-FR');
+}
+
+// Fonction pour charger les prédictions
+async function loadPredictions() {
+    try {
+        const response = await fetch('/api/ai-advanced/predictions');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayPredictions(data.predictions);
+        } else {
+            document.getElementById('predictions-container').innerHTML = 
+                '<div class="alert alert-warning">Erreur lors du chargement des prédictions</div>';
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('predictions-container').innerHTML = 
+            '<div class="alert alert-danger">Erreur de connexion</div>';
+    }
+}
+
+// Fonction pour afficher les prédictions
+function displayPredictions(predictions) {
+    const container = document.getElementById('predictions-container');
+    
+    if (predictions.length === 0) {
+        container.innerHTML = '<div class="text-muted">Aucune prédiction disponible</div>';
+        return;
+    }
+    
+    let html = '';
+    predictions.forEach(pred => {
+        const severityClass = {
+            'Faible': 'text-info',
+            'Moyen': 'text-warning',
+            'Élevé': 'text-danger',
+            'Critique': 'text-danger fw-bold'
+        }[pred.severity] || 'text-muted';
+        
+        html += `
+            <div class="prediction-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${pred.device_name}</strong>
+                        <br>
+                        <small class="text-muted">${pred.prediction_type}</small>
+                    </div>
+                    <span class="badge ${severityClass}">${pred.severity}</span>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Confiance: ${(pred.confidence * 100).toFixed(1)}%</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Fonction pour charger les intrusions
+async function loadIntrusions() {
+    try {
+        const response = await fetch('/api/ai-advanced/intrusions');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayIntrusions(data.intrusions);
+        } else {
+            document.getElementById('intrusions-container').innerHTML = 
+                '<div class="alert alert-warning">Erreur lors du chargement des intrusions</div>';
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('intrusions-container').innerHTML = 
+            '<div class="alert alert-danger">Erreur de connexion</div>';
+    }
+}
+
+// Fonction pour afficher les intrusions
+function displayIntrusions(intrusions) {
+    const container = document.getElementById('intrusions-container');
+    
+    if (intrusions.length === 0) {
+        container.innerHTML = '<div class="text-muted">Aucune intrusion détectée</div>';
+        return;
+    }
+    
+    let html = '';
+    intrusions.forEach(intrusion => {
+        const severityClass = {
+            'Faible': 'text-info',
+            'Moyen': 'text-warning',
+            'Élevé': 'text-danger',
+            'Critique': 'text-danger fw-bold'
+        }[intrusion.severity] || 'text-muted';
+        
+        const statusClass = {
+            'En cours': 'text-warning',
+            'Bloquée': 'text-success',
+            'Analysée': 'text-info'
+        }[intrusion.status] || 'text-muted';
+        
+        html += `
+            <div class="intrusion-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${intrusion.attack_type}</strong>
+                        <br>
+                        <small class="text-muted">${intrusion.source_ip} → ${intrusion.target_ip}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge ${severityClass}">${intrusion.severity}</span>
+                        <br>
+                        <small class="${statusClass}">${intrusion.status}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Fonction pour charger les optimisations
+async function loadOptimizations() {
+    try {
+        const response = await fetch('/api/ai-advanced/optimizations');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayOptimizations(data.optimizations);
+        } else {
+            document.getElementById('optimizations-container').innerHTML = 
+                '<div class="alert alert-warning">Erreur lors du chargement des optimisations</div>';
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('optimizations-container').innerHTML = 
+            '<div class="alert alert-danger">Erreur de connexion</div>';
+    }
+}
+
+// Fonction pour afficher les optimisations
+function displayOptimizations(optimizations) {
+    const container = document.getElementById('optimizations-container');
+    
+    if (optimizations.length === 0) {
+        container.innerHTML = '<div class="text-muted">Aucune optimisation disponible</div>';
+        return;
+    }
+    
+    let html = '';
+    optimizations.forEach(opt => {
+        const impactClass = {
+            'Faible': 'text-info',
+            'Moyen': 'text-warning',
+            'Élevé': 'text-success'
+        }[opt.impact] || 'text-muted';
+        
+        const statusClass = {
+            'En attente': 'text-warning',
+            'En cours': 'text-info',
+            'Terminée': 'text-success'
+        }[opt.status] || 'text-muted';
+        
+        html += `
+            <div class="optimization-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${opt.title}</strong>
+                        <br>
+                        <small class="text-muted">${opt.category}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge ${impactClass}">${opt.impact}</span>
+                        <br>
+                        <small class="${statusClass}">${opt.status}</small>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Temps: ${opt.implementation_time}</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Fonction pour charger les tendances
+async function loadTrends() {
+    try {
+        const response = await fetch('/api/ai-advanced/trends');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayTrends(data.trends);
+        } else {
+            document.getElementById('trends-container').innerHTML = 
+                '<div class="alert alert-warning">Erreur lors du chargement des tendances</div>';
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('trends-container').innerHTML = 
+            '<div class="alert alert-danger">Erreur de connexion</div>';
+    }
+}
+
+// Fonction pour afficher les tendances
+function displayTrends(trends) {
+    const container = document.getElementById('trends-container');
+    
+    if (trends.length === 0) {
+        container.innerHTML = '<div class="text-muted">Aucune tendance disponible</div>';
+        return;
+    }
+    
+    let html = '';
+    trends.forEach(trend => {
+        const trendClass = {
+            'Hausse': 'trend-up',
+            'Baisse': 'trend-down',
+            'Stable': 'trend-stable'
+        }[trend.trend_direction] || 'trend-stable';
+        
+        const trendIcon = {
+            'Hausse': 'fas fa-arrow-up',
+            'Baisse': 'fas fa-arrow-down',
+            'Stable': 'fas fa-minus'
+        }[trend.trend_direction] || 'fas fa-minus';
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>${trend.metric}</strong>
+                    <br>
+                    <small class="text-muted">${trend.period}</small>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold">${trend.current_value}</div>
+                    <div class="${trendClass}">
+                        <i class="${trendIcon}"></i>
+                        ${trend.change_percentage}%
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Fonction pour charger les statistiques
+async function loadStatistics() {
+    try {
+        const response = await fetch('/api/ai-advanced/statistics');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('ai-accuracy').textContent = (data.statistics.accuracy_rate * 100).toFixed(1) + '%';
+            document.getElementById('intrusions-blocked').textContent = data.statistics.intrusions_blocked;
+            document.getElementById('optimizations-applied').textContent = data.statistics.optimizations_applied;
+            document.getElementById('ai-models').textContent = data.statistics.ai_models_active;
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+    }
+}
+
+// Fonctions pour lancer les analyses
+async function runPredictions() {
+    try {
+        const response = await fetch('/api/ai-advanced/run-predictions', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadPredictions();
+            showNotification('Prédictions IA lancées avec succès', 'success');
+        } else {
+            showNotification('Erreur lors du lancement des prédictions', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    }
+}
+
+async function runIntrusionDetection() {
+    try {
+        const response = await fetch('/api/ai-advanced/run-intrusion-detection', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadIntrusions();
+            showNotification('Détection d\'intrusion lancée avec succès', 'success');
+        } else {
+            showNotification('Erreur lors de la détection d\'intrusion', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    }
+}
+
+async function runOptimization() {
+    try {
+        const response = await fetch('/api/ai-advanced/run-optimization', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadOptimizations();
+            showNotification('Optimisation lancée avec succès', 'success');
+        } else {
+            showNotification('Erreur lors de l\'optimisation', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    }
+}
+
+async function runTrendAnalysis() {
+    try {
+        const response = await fetch('/api/ai-advanced/run-trend-analysis', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadTrends();
+            showNotification('Analyse des tendances lancée avec succès', 'success');
+        } else {
+            showNotification('Erreur lors de l\'analyse des tendances', 'error');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showNotification('Erreur de connexion', 'error');
+    }
+}
+
+// Fonction pour afficher les notifications
+function showNotification(message, type = 'info') {
+    if (typeof NotificationManager !== 'undefined' && NotificationManager.showToast) {
+        NotificationManager.showToast(message, type);
+    } else {
+        alert(message);
+    }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    // Charger les données initiales
+    loadPredictions();
+    loadIntrusions();
+    loadOptimizations();
+    loadTrends();
+    loadStatistics();
+    
+    // Mettre à jour l'heure toutes les secondes
+    setInterval(updateTime, 1000);
+    
+    // Recharger les données toutes les 30 secondes
+    setInterval(() => {
+        loadStatistics();
+    }, 30000);
+});
+</script>
+{% endblock %} 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script de nettoyage pour passer en mode production Central Danone
-Supprime toutes les données de démonstration et prépare la base pour la production
+Script de nettoyage pour l'environnement de production
+Supprime toutes les données de démonstration et prépare l'environnement pour des données réelles
 """
 
 import os
@@ -13,131 +13,98 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import app, db, Device, ScanHistory, Alert, AIModel
 
-def clean_production_database():
-    """Nettoie la base de données pour la production"""
-    print("🧹 NETTOYAGE DE LA BASE DE DONNÉES CENTRAL DANONE")
-    print("=" * 60)
+def clean_database():
+    """Nettoie la base de données de toutes les données de démonstration"""
+    print("🧹 NETTOYAGE DE LA BASE DE DONNÉES")
+    print("=" * 50)
     
     with app.app_context():
         try:
-            # Compter les données actuelles
-            device_count = Device.query.count()
-            scan_count = ScanHistory.query.count()
-            alert_count = Alert.query.count()
-            model_count = AIModel.query.count()
+            # Supprimer toutes les données
+            print("🗑️ Suppression des données de démonstration...")
             
-            print(f"📊 Données actuelles:")
-            print(f"   - Équipements: {device_count}")
-            print(f"   - Scans historiques: {scan_count}")
-            print(f"   - Alertes: {alert_count}")
-            print(f"   - Modèles IA: {model_count}")
-            
-            if device_count == 0:
-                print("✅ Base de données déjà vide - prête pour la production")
-                return
-            
-            # Demander confirmation
-            print("\n⚠️  ATTENTION: Cette opération va supprimer TOUTES les données de démonstration")
-            print("   Seuls les modèles IA entraînés seront conservés")
-            
-            response = input("\n❓ Continuer le nettoyage ? (oui/non): ").lower().strip()
-            
-            if response not in ['oui', 'o', 'yes', 'y']:
-                print("❌ Nettoyage annulé")
-                return
-            
-            print("\n🗑️  Suppression des données de démonstration...")
-            
-            # Supprimer les alertes
-            Alert.query.delete()
-            print("   ✅ Alertes supprimées")
-            
-            # Supprimer l'historique des scans
+            # Supprimer dans l'ordre pour respecter les contraintes de clés étrangères
             ScanHistory.query.delete()
             print("   ✅ Historique des scans supprimé")
             
-            # Supprimer les équipements de démonstration
+            Alert.query.delete()
+            print("   ✅ Alertes supprimées")
+            
             Device.query.delete()
             print("   ✅ Équipements supprimés")
             
-            # Conserver les modèles IA
-            print("   ✅ Modèles IA conservés")
+            AIModel.query.delete()
+            print("   ✅ Modèles IA supprimés")
             
-            # Commit des changements
+            # Valider les changements
             db.session.commit()
+            print("✅ Base de données nettoyée avec succès")
             
-            print("\n✅ NETTOYAGE TERMINÉ")
-            print("=" * 60)
-            print("🎯 La base de données est maintenant prête pour la production")
-            print("📡 Lancez un scan réseau pour détecter vos vrais équipements")
-            print("🧠 Les modèles IA s'entraîneront automatiquement avec les nouvelles données")
+            # Vérifier que la base est vide
+            device_count = Device.query.count()
+            scan_count = ScanHistory.query.count()
+            alert_count = Alert.query.count()
             
+            print(f"\n📊 État de la base de données :")
+            print(f"   • Équipements : {device_count}")
+            print(f"   • Scans : {scan_count}")
+            print(f"   • Alertes : {alert_count}")
+            
+            if device_count == 0 and scan_count == 0 and alert_count == 0:
+                print("✅ Base de données prête pour la production")
+                print("\n🚀 Vous pouvez maintenant :")
+                print("   1. Démarrer l'application : python app.py")
+                print("   2. Effectuer un scan réseau pour détecter les vrais équipements")
+                print("   3. Les données seront collectées dynamiquement")
+            else:
+                print("⚠️ Certaines données persistent encore")
+                
         except Exception as e:
-            print(f"❌ Erreur lors du nettoyage: {str(e)}")
+            print(f"❌ Erreur lors du nettoyage : {e}")
             db.session.rollback()
 
-def backup_demo_data():
-    """Sauvegarde les données de démonstration avant nettoyage"""
-    print("💾 SAUVEGARDE DES DONNÉES DE DÉMONSTRATION")
-    print("=" * 60)
+def verify_production_ready():
+    """Vérifie que l'environnement est prêt pour la production"""
+    print("\n🔍 VÉRIFICATION DE L'ENVIRONNEMENT DE PRODUCTION")
+    print("=" * 50)
     
-    with app.app_context():
-        try:
-            # Créer un fichier de sauvegarde
-            backup_file = f"backup_demo_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
-            
-            # Exporter les données (format simple)
-            devices = Device.query.all()
-            scans = ScanHistory.query.all()
-            alerts = Alert.query.all()
-            
-            with open(backup_file, 'w', encoding='utf-8') as f:
-                f.write("-- Sauvegarde des données de démonstration Central Danone\n")
-                f.write(f"-- Date: {datetime.now().isoformat()}\n\n")
-                
-                f.write(f"-- Équipements: {len(devices)}\n")
-                for device in devices:
-                    f.write(f"-- {device.ip} ({device.hostname})\n")
-                
-                f.write(f"\n-- Scans: {len(scans)}\n")
-                f.write(f"-- Alertes: {len(alerts)}\n")
-            
-            print(f"✅ Sauvegarde créée: {backup_file}")
-            
-        except Exception as e:
-            print(f"❌ Erreur lors de la sauvegarde: {str(e)}")
+    # Vérifier les fichiers de configuration
+    config_files = ['config.py', 'network_scanner.py', 'ai_enhancement.py']
+    for file in config_files:
+        if os.path.exists(file):
+            print(f"✅ {file} présent")
+        else:
+            print(f"❌ {file} manquant")
+    
+    # Vérifier les répertoires nécessaires
+    directories = ['reports', 'logs', 'ai_models', 'static', 'templates']
+    for directory in directories:
+        if os.path.exists(directory):
+            print(f"✅ Répertoire {directory}/ présent")
+        else:
+            print(f"❌ Répertoire {directory}/ manquant")
+    
+    # Vérifier les dépendances
+    try:
+        import flask
+        import sqlalchemy
+        import nmap
+        import sklearn
+        print("✅ Toutes les dépendances Python sont installées")
+    except ImportError as e:
+        print(f"❌ Dépendance manquante : {e}")
 
-def main():
-    """Fonction principale"""
-    print("🏭 CENTRAL DANONE - PASSAGE EN MODE PRODUCTION")
+if __name__ == "__main__":
+    print("🚀 PRÉPARATION DE L'ENVIRONNEMENT DE PRODUCTION")
     print("=" * 60)
+    print("Ce script va nettoyer la base de données et préparer")
+    print("l'environnement pour des données réelles de production.")
+    print()
     
-    # Vérifier que nous sommes dans le bon répertoire
-    if not os.path.exists('app.py'):
-        print("❌ Erreur: Ce script doit être exécuté depuis le répertoire du projet")
-        return
-    
-    # Options
-    print("Options disponibles:")
-    print("1. Nettoyer la base de données (supprimer les données de démonstration)")
-    print("2. Sauvegarder les données de démonstration")
-    print("3. Nettoyer ET sauvegarder")
-    print("4. Quitter")
-    
-    choice = input("\nChoisissez une option (1-4): ").strip()
-    
-    if choice == '1':
-        clean_production_database()
-    elif choice == '2':
-        backup_demo_data()
-    elif choice == '3':
-        backup_demo_data()
-        print()
-        clean_production_database()
-    elif choice == '4':
-        print("👋 Au revoir!")
+    response = input("Continuer ? (y/N) : ")
+    if response.lower() in ['y', 'yes', 'oui']:
+        clean_database()
+        verify_production_ready()
+        print("\n🎉 Environnement de production prêt !")
     else:
-        print("❌ Option invalide")
-
-if __name__ == '__main__':
-    main() 
+        print("❌ Opération annulée") 

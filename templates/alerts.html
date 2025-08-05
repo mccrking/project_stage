@@ -248,7 +248,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Actualisation des alertes
     document.getElementById('btn-refresh-alerts').addEventListener('click', function() {
-        window.location.reload();
+        // Suppression du reload automatique - utilisation d'une fonction de rafraîchissement AJAX
+        // window.location.reload();
+        loadAlerts();
     });
 });
 
@@ -263,7 +265,9 @@ function resolveAlert(alertId) {
     .then(data => {
         if (data.status === 'success') {
             showAlert('success', 'Alerte résolue avec succès');
-            setTimeout(() => window.location.reload(), 1000);
+            // Suppression du reload automatique - rechargement AJAX
+            // setTimeout(() => window.location.reload(), 1000);
+            loadAlerts();
         } else {
             showAlert('danger', data.message);
         }
@@ -287,7 +291,9 @@ function resolveMultipleAlerts(alertIds) {
     .then(data => {
         if (data.status === 'success') {
             showAlert('success', data.message);
-            setTimeout(() => window.location.reload(), 1000);
+            // Suppression du reload automatique - rechargement AJAX
+            // setTimeout(() => window.location.reload(), 1000);
+            loadAlerts();
         } else {
             showAlert('danger', data.message);
         }
@@ -295,6 +301,25 @@ function resolveMultipleAlerts(alertIds) {
     .catch(error => {
         showAlert('danger', 'Erreur lors de la résolution: ' + error.message);
     });
+}
+
+// Fonction pour recharger les alertes via AJAX
+function loadAlerts() {
+    fetch('/api/alerts')
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour la liste des alertes sans recharger la page
+            updateAlertsList(data.alerts);
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des alertes:', error);
+        });
+}
+
+function updateAlertsList(alerts) {
+    // Logique pour mettre à jour la liste des alertes
+    // Cette fonction peut être implémentée selon les besoins
+    console.log('Alertes mises à jour:', alerts);
 }
 </script>
 {% endblock %} 

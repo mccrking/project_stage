@@ -442,9 +442,9 @@ function showAlert(type, message) {
     }, 5000);
 }
 
-// Actualisation automatique
-setInterval(() => {
-    location.reload();
-}, 300000); // 5 minutes
+// Actualisation automatique désactivée pour éviter les recharges
+// setInterval(() => {
+//     location.reload();
+// }, 300000); // 5 minutes
 </script>
 {% endblock %} 

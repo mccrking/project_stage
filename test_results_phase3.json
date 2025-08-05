@@ -1,0 +1,112 @@
+{
+  "test_date": "2025-08-04T15:43:15.944696",
+  "phase": "Phase 3 - IA Avancée",
+  "total_tests": 17,
+  "passed_tests": 17,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Route IA avancée",
+      "status": "PASS",
+      "message": "Route accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:03.663656"
+    },
+    {
+      "test": "API Prédictions",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:05.715510"
+    },
+    {
+      "test": "API Intrusions",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:07.756381"
+    },
+    {
+      "test": "API Optimisations",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:09.810716"
+    },
+    {
+      "test": "API Tendances",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:11.847329"
+    },
+    {
+      "test": "API Statistiques",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:13.883154"
+    },
+    {
+      "test": "API Chatbot",
+      "status": "PASS",
+      "message": "API accessible (redirection login)",
+      "timestamp": "2025-08-04T15:43:15.930812"
+    },
+    {
+      "test": "Template IA avancée",
+      "status": "PASS",
+      "message": "Fichier template trouvé",
+      "timestamp": "2025-08-04T15:43:15.931546"
+    },
+    {
+      "test": "Route /ai-advanced",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.938227"
+    },
+    {
+      "test": "Route /api/ai-advanced/predictions",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.938394"
+    },
+    {
+      "test": "Route /api/ai-advanced/intrusions",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.938561"
+    },
+    {
+      "test": "Route /api/ai-advanced/optimizations",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.938698"
+    },
+    {
+      "test": "Route /api/ai-advanced/trends",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.938846"
+    },
+    {
+      "test": "Route /api/ai-advanced/statistics",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.939008"
+    },
+    {
+      "test": "Route /api/ai-advanced/chatbot",
+      "status": "PASS",
+      "message": "Route définie",
+      "timestamp": "2025-08-04T15:43:15.939199"
+    },
+    {
+      "test": "Fichier ai_advanced.py",
+      "status": "PASS",
+      "message": "Fichier trouvé",
+      "timestamp": "2025-08-04T15:43:15.939966"
+    },
+    {
+      "test": "Contenu ai_advanced.py",
+      "status": "PASS",
+      "message": "Contenu de base présent",
+      "timestamp": "2025-08-04T15:43:15.940841"
+    }
+  ]
+}

@@ -1,0 +1,170 @@
+[
+  {
+    "test": "Fichier CSS thème",
+    "status": "PASS",
+    "message": "Fichier theme.css trouvé",
+    "timestamp": "2025-08-03T17:20:55.945067"
+  },
+  {
+    "test": "Fichier JS thème",
+    "status": "PASS",
+    "message": "Fichier theme.js trouvé",
+    "timestamp": "2025-08-03T17:20:55.945372"
+  },
+  {
+    "test": "Variables CSS Danone",
+    "status": "PASS",
+    "message": "Variables de couleurs Danone définies",
+    "timestamp": "2025-08-03T17:20:55.946113"
+  },
+  {
+    "test": "Mode sombre CSS",
+    "status": "PASS",
+    "message": "Styles mode sombre définis",
+    "timestamp": "2025-08-03T17:20:55.946256"
+  },
+  {
+    "test": "Classe ThemeManager",
+    "status": "PASS",
+    "message": "Classe ThemeManager trouvée",
+    "timestamp": "2025-08-03T17:20:55.947057"
+  },
+  {
+    "test": "Persistance thème",
+    "status": "PASS",
+    "message": "Persistance localStorage implémentée",
+    "timestamp": "2025-08-03T17:20:55.947220"
+  },
+  {
+    "test": "Classe NotificationManager",
+    "status": "PASS",
+    "message": "Classe NotificationManager trouvée",
+    "timestamp": "2025-08-03T17:20:55.947820"
+  },
+  {
+    "test": "Permissions notifications",
+    "status": "PASS",
+    "message": "Demande de permissions implémentée",
+    "timestamp": "2025-08-03T17:20:55.947948"
+  },
+  {
+    "test": "Notifications toast",
+    "status": "PASS",
+    "message": "Notifications toast implémentées",
+    "timestamp": "2025-08-03T17:20:55.948050"
+  },
+  {
+    "test": "Animation fadeIn",
+    "status": "PASS",
+    "message": "Animation fadeIn définie",
+    "timestamp": "2025-08-03T17:20:55.948536"
+  },
+  {
+    "test": "Animation slideIn",
+    "status": "PASS",
+    "message": "Animation slideIn définie",
+    "timestamp": "2025-08-03T17:20:55.948623"
+  },
+  {
+    "test": "Animation pulse",
+    "status": "PASS",
+    "message": "Animation pulse définie",
+    "timestamp": "2025-08-03T17:20:55.948699"
+  },
+  {
+    "test": "Transitions CSS",
+    "status": "PASS",
+    "message": "Transitions CSS définies",
+    "timestamp": "2025-08-03T17:20:55.948784"
+  },
+  {
+    "test": "Media queries mobile",
+    "status": "PASS",
+    "message": "Media queries mobile définies",
+    "timestamp": "2025-08-03T17:20:55.949461"
+  },
+  {
+    "test": "Classes mobile",
+    "status": "PASS",
+    "message": "Classes CSS mobile définies",
+    "timestamp": "2025-08-03T17:20:55.949564"
+  },
+  {
+    "test": "Support tactile",
+    "status": "PASS",
+    "message": "Support tactile implémenté",
+    "timestamp": "2025-08-03T17:20:55.949640"
+  },
+  {
+    "test": "Lien CSS thème",
+    "status": "PASS",
+    "message": "Lien vers theme.css dans le template",
+    "timestamp": "2025-08-03T17:20:55.950211"
+  },
+  {
+    "test": "Lien JS thème",
+    "status": "PASS",
+    "message": "Lien vers theme.js dans le template",
+    "timestamp": "2025-08-03T17:20:55.950354"
+  },
+  {
+    "test": "Meta theme-color",
+    "status": "PASS",
+    "message": "Meta theme-color définie",
+    "timestamp": "2025-08-03T17:20:55.950422"
+  },
+  {
+    "test": "Logo Danone",
+    "status": "PASS",
+    "message": "Logo SVG Danone trouvé",
+    "timestamp": "2025-08-03T17:20:55.950711"
+  },
+  {
+    "test": "Contenu logo",
+    "status": "PASS",
+    "message": "Logo contient le texte DANONE",
+    "timestamp": "2025-08-03T17:20:55.951276"
+  },
+  {
+    "test": "Dossier static/css",
+    "status": "PASS",
+    "message": "Dossier static/css trouvé",
+    "timestamp": "2025-08-03T17:20:55.951536"
+  },
+  {
+    "test": "Dossier static/js",
+    "status": "PASS",
+    "message": "Dossier static/js trouvé",
+    "timestamp": "2025-08-03T17:20:55.951847"
+  },
+  {
+    "test": "Dossier static/img",
+    "status": "PASS",
+    "message": "Dossier static/img trouvé",
+    "timestamp": "2025-08-03T17:20:55.952001"
+  },
+  {
+    "test": "Fichier config avancée",
+    "status": "PASS",
+    "message": "Fichier config_advanced.py trouvé",
+    "timestamp": "2025-08-03T17:20:55.952521"
+  },
+  {
+    "test": "Configuration UI",
+    "status": "PASS",
+    "message": "Configuration UI définie",
+    "timestamp": "2025-08-03T17:20:55.952947"
+  },
+  {
+    "test": "Configuration notifications",
+    "status": "PASS",
+    "message": "Configuration notifications définie",
+    "timestamp": "2025-08-03T17:20:55.953050"
+  },
+  {
+    "test": "Couleurs Danone",
+    "status": "PASS",
+    "message": "Palette de couleurs Danone définie",
+    "timestamp": "2025-08-03T17:20:55.953149"
+  }
+]

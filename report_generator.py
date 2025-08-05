@@ -415,7 +415,7 @@ class ReportGenerator:
             print(f"❌ Erreur lors de la génération du rapport IA: {str(e)}")
             return None 
 
-    def generate_report(self, report_type='daily', format='pdf', date_from=None, date_to=None, description=''):
+    def generate_report(self, report_type='daily', format='pdf', date_from=None, date_to=None, description='', models=None):
         """
         Génère un rapport complet selon le type demandé
         
@@ -425,12 +425,25 @@ class ReportGenerator:
             date_from (str): Date de début (optionnel)
             date_to (str): Date de fin (optionnel)
             description (str): Description du rapport
+            models (dict): Dictionnaire contenant les modèles (Device, ScanHistory, Alert, db)
             
         Returns:
             str: Chemin du fichier généré ou None si erreur
         """
         try:
-            from app import Device, ScanHistory, Alert, db
+            # Vérifier que les modèles sont fournis
+            if not models:
+                print("❌ Erreur: Modèles non fournis pour la génération du rapport")
+                return None
+            
+            Device = models.get('Device')
+            ScanHistory = models.get('ScanHistory')
+            Alert = models.get('Alert')
+            db = models.get('db')
+            
+            if not all([Device, ScanHistory, Alert, db]):
+                print("❌ Erreur: Modèles incomplets pour la génération du rapport")
+                return None
             
             # Récupérer les données selon le type de rapport
             if report_type == 'daily':

@@ -1,0 +1,554 @@
+[
+  {
+    "test": "Fichier advanced_monitoring.py",
+    "status": "PASS",
+    "message": "Fichier trouvé",
+    "timestamp": "2025-08-03T17:51:26.853525"
+  },
+  {
+    "test": "Classe AdvancedMonitoring",
+    "status": "PASS",
+    "message": "Classe principale trouvée",
+    "timestamp": "2025-08-03T17:51:26.966828"
+  },
+  {
+    "test": "Classe ServiceStatus",
+    "status": "PASS",
+    "message": "Classe ServiceStatus trouvée",
+    "timestamp": "2025-08-03T17:51:26.967367"
+  },
+  {
+    "test": "Classe DeviceLocation",
+    "status": "PASS",
+    "message": "Classe DeviceLocation trouvée",
+    "timestamp": "2025-08-03T17:51:26.967685"
+  },
+  {
+    "test": "Méthode check_service",
+    "status": "PASS",
+    "message": "Méthode check_service trouvée",
+    "timestamp": "2025-08-03T17:51:26.967927"
+  },
+  {
+    "test": "Méthode check_all_services",
+    "status": "PASS",
+    "message": "Méthode check_all_services trouvée",
+    "timestamp": "2025-08-03T17:51:26.968147"
+  },
+  {
+    "test": "Méthode check_all_ports",
+    "status": "PASS",
+    "message": "Méthode check_all_ports trouvée",
+    "timestamp": "2025-08-03T17:51:26.968372"
+  },
+  {
+    "test": "Méthode auto_discover_devices",
+    "status": "PASS",
+    "message": "Méthode auto_discover_devices trouvée",
+    "timestamp": "2025-08-03T17:51:26.968575"
+  },
+  {
+    "test": "Méthode get_device_location",
+    "status": "PASS",
+    "message": "Méthode get_device_location trouvée",
+    "timestamp": "2025-08-03T17:51:26.968875"
+  },
+  {
+    "test": "Méthode monitor_bandwidth",
+    "status": "PASS",
+    "message": "Méthode monitor_bandwidth trouvée",
+    "timestamp": "2025-08-03T17:51:26.969102"
+  },
+  {
+    "test": "Test service _test_http_service",
+    "status": "PASS",
+    "message": "Test _test_http_service trouvé",
+    "timestamp": "2025-08-03T17:51:26.969293"
+  },
+  {
+    "test": "Test service _test_https_service",
+    "status": "PASS",
+    "message": "Test _test_https_service trouvé",
+    "timestamp": "2025-08-03T17:51:26.969455"
+  },
+  {
+    "test": "Test service _test_ftp_service",
+    "status": "PASS",
+    "message": "Test _test_ftp_service trouvé",
+    "timestamp": "2025-08-03T17:51:26.969631"
+  },
+  {
+    "test": "Test service _test_ssh_service",
+    "status": "PASS",
+    "message": "Test _test_ssh_service trouvé",
+    "timestamp": "2025-08-03T17:51:26.969823"
+  },
+  {
+    "test": "Template advanced_monitoring.html",
+    "status": "PASS",
+    "message": "Template trouvé",
+    "timestamp": "2025-08-03T17:51:26.970449"
+  },
+  {
+    "test": "Section Statut des Services",
+    "status": "PASS",
+    "message": "Section Statut des Services trouvée",
+    "timestamp": "2025-08-03T17:51:27.000235"
+  },
+  {
+    "test": "Section Ports Surveillés",
+    "status": "PASS",
+    "message": "Section Ports Surveillés trouvée",
+    "timestamp": "2025-08-03T17:51:27.000552"
+  },
+  {
+    "test": "Section Équipements Découverts",
+    "status": "PASS",
+    "message": "Section Équipements Découverts trouvée",
+    "timestamp": "2025-08-03T17:51:27.000735"
+  },
+  {
+    "test": "Section Géolocalisation",
+    "status": "PASS",
+    "message": "Section Géolocalisation trouvée",
+    "timestamp": "2025-08-03T17:51:27.000909"
+  },
+  {
+    "test": "Section Bande Passante",
+    "status": "PASS",
+    "message": "Section Bande Passante trouvée",
+    "timestamp": "2025-08-03T17:51:27.001066"
+  },
+  {
+    "test": "Fonction JS loadMonitoringData",
+    "status": "PASS",
+    "message": "Fonction loadMonitoringData trouvée",
+    "timestamp": "2025-08-03T17:51:27.001203"
+  },
+  {
+    "test": "Fonction JS checkServices",
+    "status": "PASS",
+    "message": "Fonction checkServices trouvée",
+    "timestamp": "2025-08-03T17:51:27.001352"
+  },
+  {
+    "test": "Fonction JS scanPorts",
+    "status": "PASS",
+    "message": "Fonction scanPorts trouvée",
+    "timestamp": "2025-08-03T17:51:27.001507"
+  },
+  {
+    "test": "Fonction JS discoverDevices",
+    "status": "PASS",
+    "message": "Fonction discoverDevices trouvée",
+    "timestamp": "2025-08-03T17:51:27.001653"
+  },
+  {
+    "test": "Fonction JS updateLocations",
+    "status": "PASS",
+    "message": "Fonction updateLocations trouvée",
+    "timestamp": "2025-08-03T17:51:27.001776"
+  },
+  {
+    "test": "API endpoint /api/advanced-monitoring/services",
+    "status": "PASS",
+    "message": "Endpoint /api/advanced-monitoring/services référencé",
+    "timestamp": "2025-08-03T17:51:27.002267"
+  },
+  {
+    "test": "API endpoint /api/advanced-monitoring/ports",
+    "status": "PASS",
+    "message": "Endpoint /api/advanced-monitoring/ports référencé",
+    "timestamp": "2025-08-03T17:51:27.002447"
+  },
+  {
+    "test": "API endpoint /api/advanced-monitoring/discovered-devices",
+    "status": "PASS",
+    "message": "Endpoint /api/advanced-monitoring/discovered-devices référencé",
+    "timestamp": "2025-08-03T17:51:27.002587"
+  },
+  {
+    "test": "API endpoint /api/advanced-monitoring/locations",
+    "status": "PASS",
+    "message": "Endpoint /api/advanced-monitoring/locations référencé",
+    "timestamp": "2025-08-03T17:51:27.002751"
+  },
+  {
+    "test": "API endpoint /api/advanced-monitoring/bandwidth",
+    "status": "PASS",
+    "message": "Endpoint /api/advanced-monitoring/bandwidth référencé",
+    "timestamp": "2025-08-03T17:51:27.002886"
+  },
+  {
+    "test": "Import advanced_monitoring",
+    "status": "PASS",
+    "message": "Import trouvé",
+    "timestamp": "2025-08-03T17:51:27.098623"
+  },
+  {
+    "test": "Route @app.route('/advanced-monitoring')",
+    "status": "PASS",
+    "message": "Route @app.route('/advanced-monitoring') trouvée",
+    "timestamp": "2025-08-03T17:51:27.099034"
+  },
+  {
+    "test": "Route @app.route('/api/advanced-monitoring/services')",
+    "status": "PASS",
+    "message": "Route @app.route('/api/advanced-monitoring/services') trouvée",
+    "timestamp": "2025-08-03T17:51:27.099328"
+  },
+  {
+    "test": "Route @app.route('/api/advanced-monitoring/ports')",
+    "status": "PASS",
+    "message": "Route @app.route('/api/advanced-monitoring/ports') trouvée",
+    "timestamp": "2025-08-03T17:51:27.100016"
+  },
+  {
+    "test": "Route @app.route('/api/advanced-monitoring/discovered-devices')",
+    "status": "PASS",
+    "message": "Route @app.route('/api/advanced-monitoring/discovered-devices') trouvée",
+    "timestamp": "2025-08-03T17:51:27.100702"
+  },
+  {
+    "test": "Route @app.route('/api/advanced-monitoring/locations')",
+    "status": "PASS",
+    "message": "Route @app.route('/api/advanced-monitoring/locations') trouvée",
+    "timestamp": "2025-08-03T17:51:27.100907"
+  },
+  {
+    "test": "Route @app.route('/api/advanced-monitoring/bandwidth')",
+    "status": "PASS",
+    "message": "Route @app.route('/api/advanced-monitoring/bandwidth') trouvée",
+    "timestamp": "2025-08-03T17:51:27.101085"
+  },
+  {
+    "test": "Route POST @app.route('/api/advanced-monitoring/check-services', methods=['POST'])",
+    "status": "PASS",
+    "message": "Route POST @app.route('/api/advanced-monitoring/check-services', methods=['POST']) trouvée",
+    "timestamp": "2025-08-03T17:51:27.101265"
+  },
+  {
+    "test": "Route POST @app.route('/api/advanced-monitoring/scan-ports', methods=['POST'])",
+    "status": "PASS",
+    "message": "Route POST @app.route('/api/advanced-monitoring/scan-ports', methods=['POST']) trouvée",
+    "timestamp": "2025-08-03T17:51:27.101461"
+  },
+  {
+    "test": "Route POST @app.route('/api/advanced-monitoring/discover-devices', methods=['POST'])",
+    "status": "PASS",
+    "message": "Route POST @app.route('/api/advanced-monitoring/discover-devices', methods=['POST']) trouvée",
+    "timestamp": "2025-08-03T17:51:27.101624"
+  },
+  {
+    "test": "Route POST @app.route('/api/advanced-monitoring/update-locations', methods=['POST'])",
+    "status": "PASS",
+    "message": "Route POST @app.route('/api/advanced-monitoring/update-locations', methods=['POST']) trouvée",
+    "timestamp": "2025-08-03T17:51:27.101795"
+  },
+  {
+    "test": "Configuration MONITORING_CONFIG",
+    "status": "PASS",
+    "message": "Configuration trouvée",
+    "timestamp": "2025-08-03T17:51:27.162072"
+  },
+  {
+    "test": "Paramètre enable_service_monitoring",
+    "status": "PASS",
+    "message": "Paramètre enable_service_monitoring défini",
+    "timestamp": "2025-08-03T17:51:27.162306"
+  },
+  {
+    "test": "Paramètre enable_port_monitoring",
+    "status": "PASS",
+    "message": "Paramètre enable_port_monitoring défini",
+    "timestamp": "2025-08-03T17:51:27.162750"
+  },
+  {
+    "test": "Paramètre enable_bandwidth_monitoring",
+    "status": "PASS",
+    "message": "Paramètre enable_bandwidth_monitoring défini",
+    "timestamp": "2025-08-03T17:51:27.162897"
+  },
+  {
+    "test": "Paramètre enable_geolocation",
+    "status": "PASS",
+    "message": "Paramètre enable_geolocation défini",
+    "timestamp": "2025-08-03T17:51:27.162992"
+  },
+  {
+    "test": "Paramètre auto_discovery",
+    "status": "PASS",
+    "message": "Paramètre auto_discovery défini",
+    "timestamp": "2025-08-03T17:51:27.163082"
+  },
+  {
+    "test": "Paramètre monitored_services",
+    "status": "PASS",
+    "message": "Paramètre monitored_services défini",
+    "timestamp": "2025-08-03T17:51:27.163183"
+  },
+  {
+    "test": "Paramètre monitored_ports",
+    "status": "PASS",
+    "message": "Paramètre monitored_ports défini",
+    "timestamp": "2025-08-03T17:51:27.163269"
+  },
+  {
+    "test": "Table service_monitoring",
+    "status": "PASS",
+    "message": "Table service_monitoring définie",
+    "timestamp": "2025-08-03T17:51:27.164153"
+  },
+  {
+    "test": "Table device_locations",
+    "status": "PASS",
+    "message": "Table device_locations définie",
+    "timestamp": "2025-08-03T17:51:27.164270"
+  },
+  {
+    "test": "Table bandwidth_usage",
+    "status": "PASS",
+    "message": "Table bandwidth_usage définie",
+    "timestamp": "2025-08-03T17:51:27.164359"
+  },
+  {
+    "test": "Table discovered_devices",
+    "status": "PASS",
+    "message": "Table discovered_devices définie",
+    "timestamp": "2025-08-03T17:51:27.164445"
+  },
+  {
+    "test": "Service http",
+    "status": "PASS",
+    "message": "Service http configuré",
+    "timestamp": "2025-08-03T17:51:27.165166"
+  },
+  {
+    "test": "Service https",
+    "status": "PASS",
+    "message": "Service https configuré",
+    "timestamp": "2025-08-03T17:51:27.165262"
+  },
+  {
+    "test": "Service ftp",
+    "status": "PASS",
+    "message": "Service ftp configuré",
+    "timestamp": "2025-08-03T17:51:27.165387"
+  },
+  {
+    "test": "Service ssh",
+    "status": "PASS",
+    "message": "Service ssh configuré",
+    "timestamp": "2025-08-03T17:51:27.165471"
+  },
+  {
+    "test": "Service smtp",
+    "status": "PASS",
+    "message": "Service smtp configuré",
+    "timestamp": "2025-08-03T17:51:27.165553"
+  },
+  {
+    "test": "Service dns",
+    "status": "PASS",
+    "message": "Service dns configuré",
+    "timestamp": "2025-08-03T17:51:27.165631"
+  },
+  {
+    "test": "Service snmp",
+    "status": "PASS",
+    "message": "Service snmp configuré",
+    "timestamp": "2025-08-03T17:51:27.165718"
+  },
+  {
+    "test": "Port 80",
+    "status": "PASS",
+    "message": "Port 80 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.165796"
+  },
+  {
+    "test": "Port 443",
+    "status": "PASS",
+    "message": "Port 443 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.165867"
+  },
+  {
+    "test": "Port 22",
+    "status": "PASS",
+    "message": "Port 22 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.165941"
+  },
+  {
+    "test": "Port 21",
+    "status": "PASS",
+    "message": "Port 21 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.166013"
+  },
+  {
+    "test": "Port 25",
+    "status": "PASS",
+    "message": "Port 25 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.166087"
+  },
+  {
+    "test": "Port 53",
+    "status": "PASS",
+    "message": "Port 53 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.166170"
+  },
+  {
+    "test": "Port 161",
+    "status": "PASS",
+    "message": "Port 161 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.166243"
+  },
+  {
+    "test": "Port 162",
+    "status": "PASS",
+    "message": "Port 162 configuré dans la configuration",
+    "timestamp": "2025-08-03T17:51:27.166328"
+  },
+  {
+    "test": "Fonctionnalité get_device_location",
+    "status": "PASS",
+    "message": "Fonctionnalité get_device_location implémentée",
+    "timestamp": "2025-08-03T17:51:27.166899"
+  },
+  {
+    "test": "Fonctionnalité update_device_locations",
+    "status": "PASS",
+    "message": "Fonctionnalité update_device_locations implémentée",
+    "timestamp": "2025-08-03T17:51:27.166990"
+  },
+  {
+    "test": "Fonctionnalité ip-api.com",
+    "status": "PASS",
+    "message": "Fonctionnalité ip-api.com implémentée",
+    "timestamp": "2025-08-03T17:51:27.167084"
+  },
+  {
+    "test": "Fonctionnalité latitude",
+    "status": "PASS",
+    "message": "Fonctionnalité latitude implémentée",
+    "timestamp": "2025-08-03T17:51:27.167158"
+  },
+  {
+    "test": "Fonctionnalité longitude",
+    "status": "PASS",
+    "message": "Fonctionnalité longitude implémentée",
+    "timestamp": "2025-08-03T17:51:27.167242"
+  },
+  {
+    "test": "Fonctionnalité country",
+    "status": "PASS",
+    "message": "Fonctionnalité country implémentée",
+    "timestamp": "2025-08-03T17:51:27.167313"
+  },
+  {
+    "test": "Fonctionnalité city",
+    "status": "PASS",
+    "message": "Fonctionnalité city implémentée",
+    "timestamp": "2025-08-03T17:51:27.167399"
+  },
+  {
+    "test": "Fonctionnalité isp",
+    "status": "PASS",
+    "message": "Fonctionnalité isp implémentée",
+    "timestamp": "2025-08-03T17:51:27.167481"
+  },
+  {
+    "test": "Fonctionnalité monitor_bandwidth",
+    "status": "PASS",
+    "message": "Fonctionnalité monitor_bandwidth implémentée",
+    "timestamp": "2025-08-03T17:51:27.168046"
+  },
+  {
+    "test": "Fonctionnalité bytes_sent",
+    "status": "PASS",
+    "message": "Fonctionnalité bytes_sent implémentée",
+    "timestamp": "2025-08-03T17:51:27.168165"
+  },
+  {
+    "test": "Fonctionnalité bytes_received",
+    "status": "PASS",
+    "message": "Fonctionnalité bytes_received implémentée",
+    "timestamp": "2025-08-03T17:51:27.168253"
+  },
+  {
+    "test": "Fonctionnalité packets_sent",
+    "status": "PASS",
+    "message": "Fonctionnalité packets_sent implémentée",
+    "timestamp": "2025-08-03T17:51:27.168337"
+  },
+  {
+    "test": "Fonctionnalité packets_received",
+    "status": "PASS",
+    "message": "Fonctionnalité packets_received implémentée",
+    "timestamp": "2025-08-03T17:51:27.168417"
+  },
+  {
+    "test": "Fonctionnalité netstat",
+    "status": "PASS",
+    "message": "Fonctionnalité netstat implémentée",
+    "timestamp": "2025-08-03T17:51:27.168498"
+  },
+  {
+    "test": "Fonctionnalité /proc/net/dev",
+    "status": "PASS",
+    "message": "Fonctionnalité /proc/net/dev implémentée",
+    "timestamp": "2025-08-03T17:51:27.168589"
+  },
+  {
+    "test": "Fonctionnalité auto_discover_devices",
+    "status": "PASS",
+    "message": "Fonctionnalité auto_discover_devices implémentée",
+    "timestamp": "2025-08-03T17:51:27.169208"
+  },
+  {
+    "test": "Fonctionnalité _detect_device_type",
+    "status": "PASS",
+    "message": "Fonctionnalité _detect_device_type implémentée",
+    "timestamp": "2025-08-03T17:51:27.169315"
+  },
+  {
+    "test": "Fonctionnalité web_server",
+    "status": "PASS",
+    "message": "Fonctionnalité web_server implémentée",
+    "timestamp": "2025-08-03T17:51:27.169404"
+  },
+  {
+    "test": "Fonctionnalité server",
+    "status": "PASS",
+    "message": "Fonctionnalité server implémentée",
+    "timestamp": "2025-08-03T17:51:27.169492"
+  },
+  {
+    "test": "Fonctionnalité ftp_server",
+    "status": "PASS",
+    "message": "Fonctionnalité ftp_server implémentée",
+    "timestamp": "2025-08-03T17:51:27.169582"
+  },
+  {
+    "test": "Fonctionnalité mail_server",
+    "status": "PASS",
+    "message": "Fonctionnalité mail_server implémentée",
+    "timestamp": "2025-08-03T17:51:27.169676"
+  },
+  {
+    "test": "Fonctionnalité dns_server",
+    "status": "PASS",
+    "message": "Fonctionnalité dns_server implémentée",
+    "timestamp": "2025-08-03T17:51:27.169792"
+  },
+  {
+    "test": "Fonctionnalité windows_pc",
+    "status": "PASS",
+    "message": "Fonctionnalité windows_pc implémentée",
+    "timestamp": "2025-08-03T17:51:27.169887"
+  },
+  {
+    "test": "Fonctionnalité vnc_server",
+    "status": "PASS",
+    "message": "Fonctionnalité vnc_server implémentée",
+    "timestamp": "2025-08-03T17:51:27.170004"
+  }
+]

@@ -382,7 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     showAlert('success', `Scan de ${ip} terminé: ${data.message}`);
-                    setTimeout(() => window.location.reload(), 1000);
+                    // Suppression du reload automatique - les données se mettent à jour via AJAX
+                    // setTimeout(() => window.location.reload(), 1000);
                 } else {
                     showAlert('danger', data.message);
                 }
@@ -450,10 +451,15 @@ document.addEventListener('DOMContentLoaded', function() {
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualisation...';
         button.disabled = true;
         
-        // Simuler un rechargement
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+        // Suppression du reload automatique - utilisation de refreshData() à la place
+        // setTimeout(() => {
+        //     window.location.reload();
+        // }, 1000);
+        
+        // Utiliser la fonction refreshData personnalisée
+        refreshData();
+        button.innerHTML = originalHTML;
+        button.disabled = false;
     });
     
     // Mise à jour de l'heure de dernière mise à jour
@@ -489,7 +495,8 @@ window.scanAllNetworks = function() {
     .then(data => {
         if (data.status === 'success') {
             showAlert('success', 'Scan multi-réseaux lancé avec succès !');
-            setTimeout(() => window.location.reload(), 3000);
+            // Suppression du reload automatique - les données se mettent à jour via AJAX
+            // setTimeout(() => window.location.reload(), 3000);
         } else {
             showAlert('danger', data.message);
         }

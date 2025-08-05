@@ -1,0 +1,726 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring Avancé - Dashboard Danone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .service-status-card {
+        border-left: 4px solid var(--danone-green);
+        transition: all 0.3s ease;
+    }
+    
+    .service-status-card.down {
+        border-left-color: var(--danone-red);
+    }
+    
+    .service-status-card.timeout {
+        border-left-color: var(--danone-orange);
+    }
+    
+    .location-map {
+        height: 400px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .bandwidth-chart {
+        height: 300px;
+    }
+    
+    .discovery-card {
+        border-left: 4px solid var(--danone-blue);
+    }
+    
+    .new-device {
+        background-color: rgba(0, 102, 204, 0.1);
+        border: 1px solid var(--danone-blue);
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-up { background-color: var(--danone-green); }
+    .status-down { background-color: var(--danone-red); }
+    .status-timeout { background-color: var(--danone-orange); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-search-plus me-2"></i>
+                        Monitoring Avancé - Fonctionnalités de Surveillance
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        Surveillance avancée des services, ports, détection automatique d'équipements, 
+                        géolocalisation et monitoring de bande passante.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques générales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danone-blue" id="total-services">0</div>
+                    <div class="stat-label">Services Surveillés</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danone-green" id="services-up">0</div>
+                    <div class="stat-label">Services Opérationnels</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danone-orange" id="new-devices">0</div>
+                    <div class="stat-label">Nouveaux Équipements</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <div class="stat-number text-danone-blue" id="locations-found">0</div>
+                    <div class="stat-label">Géolocalisations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contrôles -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Contrôles de Monitoring
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100 mb-2" id="btn-check-services">
+                                <i class="fas fa-play me-2"></i>Vérifier Services
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100 mb-2" id="btn-scan-ports">
+                                <i class="fas fa-search me-2"></i>Scanner Ports
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100 mb-2" id="btn-discover-devices">
+                                <i class="fas fa-radar me-2"></i>Découverte Auto
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning w-100 mb-2" id="btn-update-locations">
+                                <i class="fas fa-map-marker-alt me-2"></i>Mettre à jour Géolocalisation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services et Ports -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-server me-2"></i>
+                        Statut des Services
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="services-list">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            Chargement des services...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-network-wired me-2"></i>
+                        Ports Surveillés
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="ports-list">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            Chargement des ports...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Découverte d'équipements -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card discovery-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-radar me-2"></i>
+                        Équipements Découverts Automatiquement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="discovered-devices-table">
+                            <thead>
+                                <tr>
+                                    <th>Adresse IP</th>
+                                    <th>MAC Address</th>
+                                    <th>Hostname</th>
+                                    <th>Type d'Équipement</th>
+                                    <th>Première Détection</th>
+                                    <th>Dernière Vue</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Chargement des équipements découverts...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Géolocalisation et Bande Passante -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map me-2"></i>
+                        Géolocalisation des Équipements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="location-map" class="location-map">
+                        <div class="text-center text-muted pt-5">
+                            <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                            <p>Carte de géolocalisation</p>
+                            <p class="small">Les équipements seront affichés ici avec leurs coordonnées GPS</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Utilisation Bande Passante
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="bandwidth-chart" class="bandwidth-chart">
+                        <div class="text-center text-muted pt-5">
+                            <i class="fas fa-chart-area fa-3x mb-3"></i>
+                            <p>Graphique de bande passante</p>
+                            <p class="small">Les statistiques réseau seront affichées ici</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs de Monitoring -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt me-2"></i>
+                        Logs de Monitoring
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="monitoring-logs" style="max-height: 300px; overflow-y: auto;">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            Chargement des logs...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour détails d'équipement -->
+<div class="modal fade" id="deviceDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Détails de l'Équipement
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="device-details-content">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="btn-add-to-monitoring">
+                    <i class="fas fa-plus me-2"></i>Ajouter au Monitoring
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Variables globales
+let monitoringData = {
+    services: [],
+    ports: [],
+    discoveredDevices: [],
+    locations: [],
+    bandwidth: []
+};
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    loadMonitoringData();
+    setupEventListeners();
+    
+    // Auto-refresh toutes les 30 secondes
+    setInterval(loadMonitoringData, 30000);
+});
+
+function setupEventListeners() {
+    // Boutons de contrôle
+    document.getElementById('btn-check-services').addEventListener('click', checkServices);
+    document.getElementById('btn-scan-ports').addEventListener('click', scanPorts);
+    document.getElementById('btn-discover-devices').addEventListener('click', discoverDevices);
+    document.getElementById('btn-update-locations').addEventListener('click', updateLocations);
+}
+
+function loadMonitoringData() {
+    // Charger les données de monitoring
+    Promise.all([
+        fetch('/api/advanced-monitoring/services').then(r => r.json()),
+        fetch('/api/advanced-monitoring/ports').then(r => r.json()),
+        fetch('/api/advanced-monitoring/discovered-devices').then(r => r.json()),
+        fetch('/api/advanced-monitoring/locations').then(r => r.json()),
+        fetch('/api/advanced-monitoring/bandwidth').then(r => r.json())
+    ]).then(([services, ports, devices, locations, bandwidth]) => {
+        monitoringData = { services, ports, discoveredDevices: devices, locations, bandwidth };
+        updateDashboard();
+    }).catch(error => {
+        console.error('Erreur chargement données monitoring:', error);
+        addLog('Erreur lors du chargement des données de monitoring', 'error');
+    });
+}
+
+function updateDashboard() {
+    updateStatistics();
+    updateServicesList();
+    updatePortsList();
+    updateDiscoveredDevicesTable();
+    updateLocationMap();
+    updateBandwidthChart();
+}
+
+function updateStatistics() {
+    // Mettre à jour les statistiques
+    const totalServices = monitoringData.services.length;
+    const servicesUp = monitoringData.services.filter(s => s.status === 'up').length;
+    const newDevices = monitoringData.discoveredDevices.filter(d => d.status === 'new').length;
+    const locationsFound = monitoringData.locations.length;
+    
+    document.getElementById('total-services').textContent = totalServices;
+    document.getElementById('services-up').textContent = servicesUp;
+    document.getElementById('new-devices').textContent = newDevices;
+    document.getElementById('locations-found').textContent = locationsFound;
+}
+
+function updateServicesList() {
+    const container = document.getElementById('services-list');
+    
+    if (monitoringData.services.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted">Aucun service surveillé</div>';
+        return;
+    }
+    
+    const servicesHtml = monitoringData.services.map(service => `
+        <div class="service-status-card ${service.status} mb-3 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">
+                        <span class="status-indicator status-${service.status}"></span>
+                        ${service.service_name} (Port ${service.port})
+                    </h6>
+                    <small class="text-muted">
+                        Dernière vérification: ${formatDate(service.last_check)}
+                        ${service.response_time ? ` | Temps de réponse: ${service.response_time.toFixed(2)}s` : ''}
+                    </small>
+                </div>
+                <div>
+                    <span class="badge bg-${getStatusColor(service.status)}">${service.status.toUpperCase()}</span>
+                </div>
+            </div>
+            ${service.error_message ? `<small class="text-danger">${service.error_message}</small>` : ''}
+        </div>
+    `).join('');
+    
+    container.innerHTML = servicesHtml;
+}
+
+function updatePortsList() {
+    const container = document.getElementById('ports-list');
+    
+    if (monitoringData.ports.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted">Aucun port surveillé</div>';
+        return;
+    }
+    
+    const portsHtml = monitoringData.ports.map(port => `
+        <div class="service-status-card ${port.status} mb-3 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">
+                        <span class="status-indicator status-${port.status}"></span>
+                        Port ${port.port}
+                    </h6>
+                    <small class="text-muted">
+                        Dernière vérification: ${formatDate(port.last_check)}
+                    </small>
+                </div>
+                <div>
+                    <span class="badge bg-${getStatusColor(port.status)}">${port.status.toUpperCase()}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = portsHtml;
+}
+
+function updateDiscoveredDevicesTable() {
+    const tbody = document.querySelector('#discovered-devices-table tbody');
+    
+    if (monitoringData.discoveredDevices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Aucun équipement découvert</td></tr>';
+        return;
+    }
+    
+    const devicesHtml = monitoringData.discoveredDevices.map(device => `
+        <tr class="${device.status === 'new' ? 'new-device' : ''}">
+            <td><strong>${device.ip}</strong></td>
+            <td>${device.mac || 'N/A'}</td>
+            <td>${device.hostname || 'N/A'}</td>
+            <td>
+                <span class="badge bg-info">${device.device_type}</span>
+            </td>
+            <td>${formatDate(device.first_seen)}</td>
+            <td>${formatDate(device.last_seen)}</td>
+            <td>
+                <span class="badge bg-${device.status === 'new' ? 'warning' : 'success'}">
+                    ${device.status === 'new' ? 'Nouveau' : 'Actif'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="showDeviceDetails('${device.ip}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-success" onclick="addToMonitoring('${device.ip}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    tbody.innerHTML = devicesHtml;
+}
+
+function updateLocationMap() {
+    const container = document.getElementById('location-map');
+    
+    if (monitoringData.locations.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted pt-5">
+                <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                <p>Aucune géolocalisation disponible</p>
+                <p class="small">Cliquez sur "Mettre à jour Géolocalisation" pour commencer</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Ici on pourrait intégrer une vraie carte (Leaflet, Google Maps, etc.)
+    const locationsHtml = monitoringData.locations.map(location => `
+        <div class="card mb-2">
+            <div class="card-body">
+                <h6 class="mb-1">${location.ip}</h6>
+                <small class="text-muted">
+                    ${location.city || 'Ville inconnue'}, ${location.country || 'Pays inconnu'}
+                    ${location.latitude && location.longitude ? 
+                        ` | Coordonnées: ${location.latitude}, ${location.longitude}` : ''}
+                </small>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = locationsHtml;
+}
+
+function updateBandwidthChart() {
+    const container = document.getElementById('bandwidth-chart');
+    
+    if (monitoringData.bandwidth.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted pt-5">
+                <i class="fas fa-chart-area fa-3x mb-3"></i>
+                <p>Aucune donnée de bande passante</p>
+                <p class="small">Les statistiques réseau seront affichées ici</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Ici on pourrait intégrer un vrai graphique (Chart.js, etc.)
+    const bandwidthHtml = monitoringData.bandwidth.map(usage => `
+        <div class="card mb-2">
+            <div class="card-body">
+                <h6 class="mb-1">${usage.device_ip} (${usage.interface})</h6>
+                <small class="text-muted">
+                    Envoyé: ${formatBytes(usage.bytes_sent)} | 
+                    Reçu: ${formatBytes(usage.bytes_received)}
+                </small>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = bandwidthHtml;
+}
+
+// Fonctions d'action
+function checkServices() {
+    addLog('Vérification des services en cours...', 'info');
+    
+    fetch('/api/advanced-monitoring/check-services', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addLog('Vérification des services terminée', 'success');
+                loadMonitoringData();
+            } else {
+                addLog('Erreur lors de la vérification des services', 'error');
+            }
+        })
+        .catch(error => {
+            addLog('Erreur lors de la vérification des services: ' + error.message, 'error');
+        });
+}
+
+function scanPorts() {
+    addLog('Scan des ports en cours...', 'info');
+    
+    fetch('/api/advanced-monitoring/scan-ports', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addLog('Scan des ports terminé', 'success');
+                loadMonitoringData();
+            } else {
+                addLog('Erreur lors du scan des ports', 'error');
+            }
+        })
+        .catch(error => {
+            addLog('Erreur lors du scan des ports: ' + error.message, 'error');
+        });
+}
+
+function discoverDevices() {
+    addLog('Découverte automatique d\'équipements en cours...', 'info');
+    
+    fetch('/api/advanced-monitoring/discover-devices', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addLog(`Découverte terminée: ${data.discovered_count} nouveaux équipements`, 'success');
+                loadMonitoringData();
+            } else {
+                addLog('Erreur lors de la découverte d\'équipements', 'error');
+            }
+        })
+        .catch(error => {
+            addLog('Erreur lors de la découverte d\'équipements: ' + error.message, 'error');
+        });
+}
+
+function updateLocations() {
+    addLog('Mise à jour des géolocalisations en cours...', 'info');
+    
+    fetch('/api/advanced-monitoring/update-locations', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                addLog('Mise à jour des géolocalisations terminée', 'success');
+                loadMonitoringData();
+            } else {
+                addLog('Erreur lors de la mise à jour des géolocalisations', 'error');
+            }
+        })
+        .catch(error => {
+            addLog('Erreur lors de la mise à jour des géolocalisations: ' + error.message, 'error');
+        });
+}
+
+function showDeviceDetails(ip) {
+    // Afficher les détails d'un équipement dans une modal
+    const modal = new bootstrap.Modal(document.getElementById('deviceDetailsModal'));
+    const content = document.getElementById('device-details-content');
+    
+    content.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Chargement des détails...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Charger les détails depuis l'API
+    fetch(`/api/advanced-monitoring/device-details/${ip}`)
+        .then(response => response.json())
+        .then(data => {
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informations de base</h6>
+                        <p><strong>IP:</strong> ${data.ip}</p>
+                        <p><strong>MAC:</strong> ${data.mac || 'N/A'}</p>
+                        <p><strong>Hostname:</strong> ${data.hostname || 'N/A'}</p>
+                        <p><strong>Type:</strong> ${data.device_type}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Géolocalisation</h6>
+                        <p><strong>Pays:</strong> ${data.location?.country || 'N/A'}</p>
+                        <p><strong>Ville:</strong> ${data.location?.city || 'N/A'}</p>
+                        <p><strong>ISP:</strong> ${data.location?.isp || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    Erreur lors du chargement des détails: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function addToMonitoring(ip) {
+    fetch('/api/advanced-monitoring/add-device', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip: ip })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            addLog(`Équipement ${ip} ajouté au monitoring`, 'success');
+            loadMonitoringData();
+        } else {
+            addLog(`Erreur lors de l'ajout de ${ip} au monitoring`, 'error');
+        }
+    })
+    .catch(error => {
+        addLog(`Erreur lors de l'ajout au monitoring: ${error.message}`, 'error');
+    });
+}
+
+// Fonctions utilitaires
+function getStatusColor(status) {
+    switch (status) {
+        case 'up': return 'success';
+        case 'down': return 'danger';
+        case 'timeout': return 'warning';
+        default: return 'secondary';
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleString('fr-FR');
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function addLog(message, type = 'info') {
+    const logsContainer = document.getElementById('monitoring-logs');
+    const timestamp = new Date().toLocaleTimeString('fr-FR');
+    const logEntry = document.createElement('div');
+    logEntry.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-sm`;
+    logEntry.innerHTML = `
+        <small><strong>${timestamp}</strong> - ${message}</small>
+    `;
+    
+    logsContainer.insertBefore(logEntry, logsContainer.firstChild);
+    
+    // Limiter le nombre de logs affichés
+    const logs = logsContainer.querySelectorAll('.alert');
+    if (logs.length > 50) {
+        logs[logs.length - 1].remove();
+    }
+}
+</script>
+{% endblock %} 

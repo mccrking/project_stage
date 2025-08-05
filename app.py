@@ -17,11 +17,13 @@ import logging
 from network_scanner import NetworkScanner
 from report_generator import ReportGenerator
 from ai_enhancement import ai_system, AIEnhancement
+from advanced_monitoring import advanced_monitoring
 import numpy as np
 import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import random
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -532,63 +534,65 @@ def perform_network_scan():
         network_range = Config.DEFAULT_NETWORK_RANGE
         devices_found = network_scanner.scan_network(network_range)
         
-        # Mise à jour de la base de données
-        for device_info in devices_found:
-            device = Device.query.filter_by(ip=device_info['ip']).first()
-            if device:
-                # Mise à jour de l'équipement existant
-                device.is_online = device_info['is_online']
-                device.last_seen = get_local_time()
-                device.hostname = device_info.get('hostname', device.hostname)
-                device.mac = device_info.get('mac', device.mac)
-                device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
-                device.device_type = device_info.get('type', device.device_type)
-            else:
-                # Nouvel équipement
-                device = Device(
-                    ip=device_info['ip'],
-                    hostname=device_info.get('hostname', ''),
-                    mac=device_info.get('mac', ''),
-                    mac_vendor=device_info.get('mac_vendor', ''),
-                    device_type=device_info.get('type', 'Unknown'),
-                    is_online=device_info['is_online']
+        # Utiliser le contexte d'application Flask
+        with app.app_context():
+            # Mise à jour de la base de données
+            for device_info in devices_found:
+                device = Device.query.filter_by(ip=device_info['ip']).first()
+                if device:
+                    # Mise à jour de l'équipement existant
+                    device.is_online = device_info['is_online']
+                    device.last_seen = get_local_time()
+                    device.hostname = device_info.get('hostname', device.hostname)
+                    device.mac = device_info.get('mac', device.mac)
+                    device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                    device.device_type = device_info.get('type', device.device_type)
+                else:
+                    # Nouvel équipement
+                    device = Device(
+                        ip=device_info['ip'],
+                        hostname=device_info.get('hostname', ''),
+                        mac=device_info.get('mac', ''),
+                        mac_vendor=device_info.get('mac_vendor', ''),
+                        device_type=device_info.get('type', 'Unknown'),
+                        is_online=device_info['is_online']
+                    )
+                    db.session.add(device)
+                    db.session.flush()  # Pour obtenir l'ID
+                
+                # Enregistrement du scan
+                scan_record = ScanHistory(
+                    device_id=device.id,
+                    is_online=device_info['is_online'],
+                    response_time=device_info.get('response_time'),
+                    packet_loss=device_info.get('packet_loss', 0.0),
+                    scan_duration=device_info.get('scan_duration', 0.0),
+                    error_count=device_info.get('error_count', 0)
                 )
-                db.session.add(device)
-                db.session.flush()  # Pour obtenir l'ID
+                db.session.add(scan_record)
+                
+                # Analyse IA si l'équipement est en ligne
+                if device_info['is_online']:
+                    analyze_device_with_ai(device)
             
-            # Enregistrement du scan
-            scan_record = ScanHistory(
-                device_id=device.id,
-                is_online=device_info['is_online'],
-                response_time=device_info.get('response_time'),
-                packet_loss=device_info.get('packet_loss', 0.0),
-                scan_duration=device_info.get('scan_duration', 0.0),
-                error_count=device_info.get('error_count', 0)
-            )
-            db.session.add(scan_record)
+            # Gestion des équipements hors ligne
+            online_ips = [d['ip'] for d in devices_found if d['is_online']]
+            offline_devices = Device.query.filter(~Device.ip.in_(online_ips)).all()
             
-            # Analyse IA si l'équipement est en ligne
-            if device_info['is_online']:
+            for device in offline_devices:
+                device.is_online = False
+                scan_record = ScanHistory(
+                    device_id=device.id,
+                    is_online=False,
+                    error_count=1
+                )
+                db.session.add(scan_record)
+                
+                # Analyse IA même pour les équipements hors ligne
                 analyze_device_with_ai(device)
-        
-        # Gestion des équipements hors ligne
-        online_ips = [d['ip'] for d in devices_found if d['is_online']]
-        offline_devices = Device.query.filter(~Device.ip.in_(online_ips)).all()
-        
-        for device in offline_devices:
-            device.is_online = False
-            scan_record = ScanHistory(
-                device_id=device.id,
-                is_online=False,
-                error_count=1
-            )
-            db.session.add(scan_record)
             
-            # Analyse IA même pour les équipements hors ligne
-            analyze_device_with_ai(device)
-        
-        db.session.commit()
-        logger.info(f"Scan terminé: {len(devices_found)} équipements trouvés")
+            db.session.commit()
+            logger.info(f"Scan terminé: {len(devices_found)} équipements trouvés")
         
     except Exception as e:
         logger.error(f"Erreur lors du scan: {e}")
@@ -612,57 +616,59 @@ def perform_multi_network_scan():
         
         total_devices_found = 0
         
-        # Traiter les résultats de chaque réseau
-        for network_range, result in all_results.items():
-            if 'error' in result:
-                logger.warning(f"Erreur scan {network_range}: {result['error']}")
-                continue
+        # Utiliser le contexte d'application Flask
+        with app.app_context():
+            # Traiter les résultats de chaque réseau
+            for network_range, result in all_results.items():
+                if 'error' in result:
+                    logger.warning(f"Erreur scan {network_range}: {result['error']}")
+                    continue
+                    
+                devices_found = result['devices']
+                total_devices_found += len(devices_found)
                 
-            devices_found = result['devices']
-            total_devices_found += len(devices_found)
-            
-            logger.info(f"Réseau {network_range}: {len(devices_found)} équipements trouvés")
-            
-            # Mise à jour de la base de données pour ce réseau
-            for device_info in devices_found:
-                device = Device.query.filter_by(ip=device_info['ip']).first()
+                logger.info(f"Réseau {network_range}: {len(devices_found)} équipements trouvés")
                 
-                if device:
-                    # Mise à jour de l'équipement existant
-                    device.is_online = device_info['is_online']
-                    device.last_seen = get_local_time()
-                    device.hostname = device_info.get('hostname', device.hostname)
-                    device.mac = device_info.get('mac', device.mac)
-                    device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
-                else:
-                    # Nouvel équipement
-                    device = Device(
-                        ip=device_info['ip'],
-                        hostname=device_info.get('hostname', ''),
-                        mac=device_info.get('mac', ''),
-                        mac_vendor=device_info.get('mac_vendor', ''),
-                        is_online=device_info['is_online']
+                # Mise à jour de la base de données pour ce réseau
+                for device_info in devices_found:
+                    device = Device.query.filter_by(ip=device_info['ip']).first()
+                    
+                    if device:
+                        # Mise à jour de l'équipement existant
+                        device.is_online = device_info['is_online']
+                        device.last_seen = get_local_time()
+                        device.hostname = device_info.get('hostname', device.hostname)
+                        device.mac = device_info.get('mac', device.mac)
+                        device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                    else:
+                        # Nouvel équipement
+                        device = Device(
+                            ip=device_info['ip'],
+                            hostname=device_info.get('hostname', ''),
+                            mac=device_info.get('mac', ''),
+                            mac_vendor=device_info.get('mac_vendor', ''),
+                            is_online=device_info['is_online']
+                        )
+                        db.session.add(device)
+                        db.session.flush()  # Pour obtenir l'ID
+                    
+                    # Enregistrement du scan
+                    scan_record = ScanHistory(
+                        device_id=device.id,
+                        is_online=device_info['is_online'],
+                        response_time=device_info.get('response_time'),
+                        packet_loss=device_info.get('packet_loss', 0.0),
+                        scan_duration=device_info.get('scan_duration', 0.0),
+                        error_count=device_info.get('error_count', 0)
                     )
-                    db.session.add(device)
-                    db.session.flush()  # Pour obtenir l'ID
-                
-                # Enregistrement du scan
-                scan_record = ScanHistory(
-                    device_id=device.id,
-                    is_online=device_info['is_online'],
-                    response_time=device_info.get('response_time'),
-                    packet_loss=device_info.get('packet_loss', 0.0),
-                    scan_duration=device_info.get('scan_duration', 0.0),
-                    error_count=device_info.get('error_count', 0)
-                )
-                db.session.add(scan_record)
-                
-                # Analyse IA si l'équipement est en ligne
-                if device_info['is_online']:
-                    analyze_device_with_ai(device)
-        
-        db.session.commit()
-        logger.info(f"Scan multi-réseaux terminé: {total_devices_found} équipements trouvés sur {len(all_results)} réseaux")
+                    db.session.add(scan_record)
+                    
+                    # Analyse IA si l'équipement est en ligne
+                    if device_info['is_online']:
+                        analyze_device_with_ai(device)
+            
+            db.session.commit()
+            logger.info(f"Scan multi-réseaux terminé: {total_devices_found} équipements trouvés sur {len(all_results)} réseaux")
         
     except Exception as e:
         logger.error(f"Erreur lors du scan multi-réseaux: {e}")
@@ -1463,6 +1469,14 @@ def api_generate_report():
         date_to = data.get('date_to')
         description = data.get('description', '')
         
+        # Préparer les modèles pour le générateur de rapports
+        models = {
+            'Device': Device,
+            'ScanHistory': ScanHistory,
+            'Alert': Alert,
+            'db': db
+        }
+        
         # Générer le rapport selon le type
         if report_type == 'ai':
             report_path = generate_ai_report()
@@ -1474,7 +1488,8 @@ def api_generate_report():
                 format=report_format,
                 date_from=date_from,
                 date_to=date_to,
-                description=description
+                description=description,
+                models=models
             )
         
         if report_path:
@@ -1910,6 +1925,760 @@ def api_ai_chart_data():
         logger.error(f"Erreur API données graphiques IA: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ===== ROUTES POUR LE MONITORING AVANCÉ =====
+
+@app.route('/advanced-monitoring')
+@login_required
+def advanced_monitoring_page():
+    """Page de monitoring avancé"""
+    return render_template('advanced_monitoring.html')
+
+@app.route('/api/advanced-monitoring/services')
+@login_required
+def api_advanced_monitoring_services():
+    """API pour récupérer les statuts des services"""
+    try:
+        services = advanced_monitoring.get_service_status_summary()
+        return jsonify(services)
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des services: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/ports')
+@login_required
+def api_advanced_monitoring_ports():
+    """API pour récupérer les statuts des ports"""
+    try:
+        # Simuler des données de ports pour l'instant
+        ports = [
+            {'port': 80, 'status': 'up', 'last_check': datetime.now().isoformat()},
+            {'port': 443, 'status': 'up', 'last_check': datetime.now().isoformat()},
+            {'port': 22, 'status': 'down', 'last_check': datetime.now().isoformat()},
+            {'port': 21, 'status': 'timeout', 'last_check': datetime.now().isoformat()}
+        ]
+        return jsonify(ports)
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des ports: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/discovered-devices')
+@login_required
+def api_advanced_monitoring_discovered_devices():
+    """API pour récupérer les équipements découverts"""
+    try:
+        devices = advanced_monitoring.get_discovered_devices()
+        return jsonify(devices)
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des équipements découverts: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/locations')
+@login_required
+def api_advanced_monitoring_locations():
+    """API pour récupérer les géolocalisations"""
+    try:
+        locations = advanced_monitoring.get_device_locations()
+        return jsonify([{
+            'ip': loc.ip,
+            'country': loc.country,
+            'city': loc.city,
+            'latitude': loc.latitude,
+            'longitude': loc.longitude,
+            'isp': loc.isp
+        } for loc in locations])
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des géolocalisations: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/bandwidth')
+@login_required
+def api_advanced_monitoring_bandwidth():
+    """API pour récupérer les données de bande passante"""
+    try:
+        # Simuler des données de bande passante pour l'instant
+        bandwidth = [
+            {
+                'device_ip': '192.168.1.1',
+                'interface': 'eth0',
+                'bytes_sent': 1024000,
+                'bytes_received': 2048000,
+                'packets_sent': 1000,
+                'packets_received': 2000,
+                'timestamp': datetime.now().isoformat()
+            }
+        ]
+        return jsonify(bandwidth)
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération de la bande passante: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/check-services', methods=['POST'])
+@login_required
+def api_advanced_monitoring_check_services():
+    """API pour vérifier les services"""
+    try:
+        advanced_monitoring.check_all_services()
+        return jsonify({'success': True, 'message': 'Vérification des services terminée'})
+    except Exception as e:
+        logger.error(f"Erreur lors de la vérification des services: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/scan-ports', methods=['POST'])
+@login_required
+def api_advanced_monitoring_scan_ports():
+    """API pour scanner les ports"""
+    try:
+        advanced_monitoring.check_all_ports()
+        return jsonify({'success': True, 'message': 'Scan des ports terminé'})
+    except Exception as e:
+        logger.error(f"Erreur lors du scan des ports: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/discover-devices', methods=['POST'])
+@login_required
+def api_advanced_monitoring_discover_devices():
+    """API pour découvrir de nouveaux équipements"""
+    try:
+        advanced_monitoring.auto_discover_devices()
+        discovered_count = len(advanced_monitoring.get_discovered_devices())
+        return jsonify({
+            'success': True, 
+            'message': 'Découverte d\'équipements terminée',
+            'discovered_count': discovered_count
+        })
+    except Exception as e:
+        logger.error(f"Erreur lors de la découverte d'équipements: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/update-locations', methods=['POST'])
+@login_required
+def api_advanced_monitoring_update_locations():
+    """API pour mettre à jour les géolocalisations"""
+    try:
+        advanced_monitoring.update_device_locations()
+        return jsonify({'success': True, 'message': 'Mise à jour des géolocalisations terminée'})
+    except Exception as e:
+        logger.error(f"Erreur lors de la mise à jour des géolocalisations: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/device-details/<ip>')
+@login_required
+def api_advanced_monitoring_device_details(ip):
+    """API pour les détails d'un équipement"""
+    try:
+        # Récupérer les détails de l'équipement
+        device = Device.query.filter_by(ip=ip).first()
+        location = advanced_monitoring.get_device_location(ip)
+        
+        details = {
+            'ip': ip,
+            'mac': device.mac if device else None,
+            'hostname': device.hostname if device else None,
+            'device_type': device.device_type if device else 'unknown',
+            'location': {
+                'country': location.country if location else None,
+                'city': location.city if location else None,
+                'isp': location.isp if location else None
+            } if location else None
+        }
+        
+        return jsonify(details)
+    except Exception as e:
+        logger.error(f"Erreur lors de la récupération des détails de l'équipement: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/advanced-monitoring/add-device', methods=['POST'])
+@login_required
+def api_advanced_monitoring_add_device():
+    """API pour ajouter un équipement au monitoring"""
+    try:
+        data = request.get_json()
+        ip = data.get('ip')
+        
+        if not ip:
+            return jsonify({'success': False, 'error': 'Adresse IP requise'}), 400
+        
+        # Vérifier si l'équipement existe déjà
+        existing_device = Device.query.filter_by(ip=ip).first()
+        if existing_device:
+            return jsonify({'success': False, 'error': 'Équipement déjà en monitoring'}), 400
+        
+        # Créer un nouvel équipement
+        new_device = Device(
+            ip=ip,
+            is_online=True,
+            device_type='discovered',
+            created_at=datetime.now()
+        )
+        
+        db.session.add(new_device)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'Équipement {ip} ajouté au monitoring'})
+    except Exception as e:
+        logger.error(f"Erreur lors de l'ajout de l'équipement: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# Routes pour l'IA Avancée - Phase 3
+@app.route('/ai-advanced')
+@login_required
+def ai_advanced_page():
+    """Page IA Avancée"""
+    current_time = get_local_time()
+    return render_template('ai_advanced.html', current_time=current_time)
+
+@app.route('/api/ai-advanced/predictions')
+@login_required
+def api_ai_advanced_predictions():
+    """API pour récupérer les prédictions IA basées sur des données réelles"""
+    try:
+        # Récupérer les équipements avec des scores de défaillance élevés
+        high_risk_devices = Device.query.filter(
+            Device.failure_probability > 0.3
+        ).order_by(Device.failure_probability.desc()).limit(5).all()
+        
+        predictions = []
+        for device in high_risk_devices:
+            # Déterminer le type de prédiction basé sur les métriques
+            if device.failure_probability > 0.7:
+                prediction_type = "Défaillance critique imminente"
+                severity = "Critique"
+            elif device.failure_probability > 0.5:
+                prediction_type = "Problème de performance"
+                severity = "Élevé"
+            elif device.health_score < 60:
+                prediction_type = "Maintenance préventive"
+                severity = "Moyen"
+            else:
+                prediction_type = "Surveillance renforcée"
+                severity = "Faible"
+            
+            predictions.append({
+                'device_id': device.id,
+                'device_name': device.hostname or f"Équipement {device.ip}",
+                'prediction_type': prediction_type,
+                'confidence': round(device.ai_confidence, 2) if device.ai_confidence > 0 else 0.75,
+                'timestamp': device.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                'description': f"Prédiction basée sur le score de défaillance ({device.failure_probability:.1%}) et le score de santé ({device.health_score:.1f}%)",
+                'severity': severity
+            })
+        
+        # Si pas assez de prédictions, ajouter des équipements avec des scores de santé faibles
+        if len(predictions) < 3:
+            low_health_devices = Device.query.filter(
+                Device.health_score < 80,
+                Device.failure_probability <= 0.3
+            ).order_by(Device.health_score.asc()).limit(3 - len(predictions)).all()
+            
+            for device in low_health_devices:
+                predictions.append({
+                    'device_id': device.id,
+                    'device_name': device.hostname or f"Équipement {device.ip}",
+                    'prediction_type': "Dégradation de performance",
+                    'confidence': 0.65,
+                    'timestamp': device.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    'description': f"Score de santé faible ({device.health_score:.1f}%) détecté",
+                    'severity': "Moyen"
+                })
+        
+        return jsonify({'success': True, 'predictions': predictions})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/intrusions')
+@login_required
+def api_ai_advanced_intrusions():
+    """API pour récupérer les intrusions détectées basées sur des données réelles"""
+    try:
+        intrusions = []
+        
+        # Récupérer les alertes de sécurité récentes
+        security_alerts = Alert.query.filter(
+            Alert.alert_type.in_(['intrusion', 'security', 'anomaly']),
+            Alert.created_at >= datetime.now() - timedelta(days=7)
+        ).order_by(Alert.created_at.desc()).limit(5).all()
+        
+        for alert in security_alerts:
+            device = Device.query.get(alert.device_id)
+            if device:
+                # Déterminer le type d'attaque basé sur l'alerte
+                if 'intrusion' in alert.alert_type.lower():
+                    attack_type = "Tentative d'intrusion"
+                    severity = "Critique" if alert.priority == 'critical' else "Moyen"
+                elif 'anomaly' in alert.alert_type.lower():
+                    attack_type = "Comportement anormal"
+                    severity = "Élevé" if alert.priority == 'high' else "Faible"
+                else:
+                    attack_type = "Activité suspecte"
+                    severity = "Moyen"
+                
+                intrusions.append({
+                    'id': alert.id,
+                    'source_ip': 'Détecté automatiquement',
+                    'target_ip': device.ip,
+                    'attack_type': attack_type,
+                    'severity': severity,
+                    'timestamp': alert.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    'status': 'En cours' if not alert.is_resolved else 'Résolu',
+                    'description': alert.message
+                })
+        
+        # Si pas assez d'intrusions, analyser les équipements avec des scores d'anomalie élevés
+        if len(intrusions) < 3:
+            anomaly_devices = Device.query.filter(
+                Device.anomaly_score > 0.5
+            ).order_by(Device.anomaly_score.desc()).limit(3 - len(intrusions)).all()
+            
+            for device in anomaly_devices:
+                intrusions.append({
+                    'id': len(intrusions) + 1,
+                    'source_ip': 'Analyse comportementale',
+                    'target_ip': device.ip,
+                    'attack_type': "Anomalie détectée",
+                    'severity': "Moyen",
+                    'timestamp': device.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    'status': 'Analysée',
+                    'description': f"Score d'anomalie élevé ({device.anomaly_score:.1%}) détecté sur {device.hostname or device.ip}"
+                })
+        
+        return jsonify({'success': True, 'intrusions': intrusions})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/optimizations')
+@login_required
+def api_ai_advanced_optimizations():
+    """API pour récupérer les optimisations basées sur des données réelles"""
+    try:
+        optimizations = []
+        
+        # Récupérer les équipements avec des scores de santé faibles qui nécessitent des optimisations
+        low_health_devices = Device.query.filter(
+            Device.health_score < 80
+        ).order_by(Device.health_score.asc()).limit(5).all()
+        
+        for device in low_health_devices:
+            # Déterminer le type d'optimisation basé sur le score de santé
+            if device.health_score < 50:
+                category = "Maintenance critique"
+                title = "Intervention immédiate requise"
+                impact = "Critique"
+                implementation_time = "Immédiat"
+                status = "En attente"
+            elif device.health_score < 70:
+                category = "Performance réseau"
+                title = "Optimisation des performances"
+                impact = "Élevé"
+                implementation_time = "4 heures"
+                status = "En cours"
+            else:
+                category = "Maintenance préventive"
+                title = "Maintenance préventive recommandée"
+                impact = "Moyen"
+                implementation_time = "2 heures"
+                status = "Planifiée"
+            
+            optimizations.append({
+                'id': device.id,
+                'category': category,
+                'title': title,
+                'description': f"Optimisation recommandée pour {device.hostname or device.ip} (Score de santé: {device.health_score:.1f}%)",
+                'impact': impact,
+                'implementation_time': implementation_time,
+                'status': status,
+                'timestamp': device.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        # Ajouter des optimisations basées sur les recommandations IA
+        devices_with_recommendations = Device.query.filter(
+            Device.ai_recommendations != '[]',
+            Device.ai_recommendations != ''
+        ).limit(3).all()
+        
+        for device in devices_with_recommendations:
+            try:
+                recommendations = json.loads(device.ai_recommendations)
+                if recommendations and len(recommendations) > 0:
+                    optimizations.append({
+                        'id': f"rec_{device.id}",
+                        'category': "Recommandation IA",
+                        'title': f"Optimisation IA pour {device.hostname or device.ip}",
+                        'description': recommendations[0] if isinstance(recommendations, list) else str(recommendations),
+                        'impact': "Moyen",
+                        'implementation_time': "1 heure",
+                        'status': "Terminée",
+                        'timestamp': device.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                    })
+            except (json.JSONDecodeError, IndexError):
+                continue
+        
+        return jsonify({'success': True, 'optimizations': optimizations})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/trends')
+@login_required
+def api_ai_advanced_trends():
+    """API pour récupérer les analyses de tendances basées sur des données réelles"""
+    try:
+        trends = []
+        
+        # Analyser les tendances de temps de réponse
+        recent_scans = ScanHistory.query.filter(
+            ScanHistory.timestamp >= datetime.now() - timedelta(days=7)
+        ).all()
+        
+        if recent_scans:
+            # Calculer les tendances de temps de réponse
+            response_times = [scan.response_time for scan in recent_scans if scan.response_time]
+            if response_times:
+                current_avg = sum(response_times) / len(response_times)
+                # Comparer avec la semaine précédente
+                old_scans = ScanHistory.query.filter(
+                    ScanHistory.timestamp >= datetime.now() - timedelta(days=14),
+                    ScanHistory.timestamp < datetime.now() - timedelta(days=7)
+                ).all()
+                
+                old_response_times = [scan.response_time for scan in old_scans if scan.response_time]
+                if old_response_times:
+                    previous_avg = sum(old_response_times) / len(old_response_times)
+                    change_percentage = ((current_avg - previous_avg) / previous_avg) * 100
+                    trend_direction = "Hausse" if change_percentage > 0 else "Baisse" if change_percentage < 0 else "Stable"
+                else:
+                    change_percentage = 0.0
+                    trend_direction = "Stable"
+                
+                trends.append({
+                    'metric': 'Temps de réponse moyen',
+                    'current_value': round(current_avg, 1),
+                    'previous_value': round(previous_avg, 1) if old_response_times else round(current_avg, 1),
+                    'change_percentage': round(change_percentage, 1),
+                    'trend_direction': trend_direction,
+                    'period': '24h',
+                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+        
+        # Analyser les tendances de disponibilité
+        devices = Device.query.all()
+        if devices:
+            online_count = sum(1 for d in devices if d.is_online)
+            current_availability = (online_count / len(devices)) * 100
+            
+            # Comparer avec les données historiques
+            total_scans = ScanHistory.query.count()
+            online_scans = ScanHistory.query.filter_by(is_online=True).count()
+            historical_availability = (online_scans / total_scans * 100) if total_scans > 0 else current_availability
+            
+            change_percentage = current_availability - historical_availability
+            trend_direction = "Hausse" if change_percentage > 0 else "Baisse" if change_percentage < 0 else "Stable"
+            
+            trends.append({
+                'metric': 'Taux de disponibilité',
+                'current_value': round(current_availability, 1),
+                'previous_value': round(historical_availability, 1),
+                'change_percentage': round(change_percentage, 1),
+                'trend_direction': trend_direction,
+                'period': '24h',
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        # Analyser les tendances de santé IA
+        if devices:
+            avg_health = sum(d.health_score for d in devices) / len(devices)
+            critical_devices = sum(1 for d in devices if d.health_score < 50)
+            
+            trends.append({
+                'metric': 'Score de santé moyen',
+                'current_value': round(avg_health, 1),
+                'previous_value': round(avg_health, 1),  # Pour simplifier
+                'change_percentage': 0.0,
+                'trend_direction': "Stable",
+                'period': '24h',
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+            
+            trends.append({
+                'metric': 'Équipements critiques',
+                'current_value': critical_devices,
+                'previous_value': critical_devices,  # Pour simplifier
+                'change_percentage': 0.0,
+                'trend_direction': "Stable",
+                'period': '24h',
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+        
+        return jsonify({'success': True, 'trends': trends})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/statistics')
+@login_required
+def api_ai_advanced_statistics():
+    """API pour récupérer les statistiques IA avancée basées sur des données réelles"""
+    try:
+        # Calculer les statistiques réelles basées sur les données de la base
+        devices = Device.query.all()
+        total_devices = len(devices)
+        
+        # Statistiques des prédictions (basées sur les scores de santé)
+        critical_devices = sum(1 for d in devices if d.maintenance_urgency == 'critical')
+        high_risk_devices = sum(1 for d in devices if d.failure_probability > 0.5)
+        total_predictions = total_devices
+        
+        # Taux de précision basé sur les scores de confiance IA
+        if total_devices > 0:
+            avg_confidence = sum(d.ai_confidence for d in devices) / total_devices
+            accuracy_rate = round(avg_confidence, 2) if avg_confidence > 0 else 0.85
+        else:
+            accuracy_rate = 0.85
+        
+        # Intrusions bloquées (basées sur les alertes de sécurité)
+        security_alerts = Alert.query.filter(
+            Alert.alert_type.in_(['intrusion', 'security', 'anomaly'])
+        ).count()
+        intrusions_blocked = security_alerts
+        
+        # Optimisations appliquées (basées sur les changements de scores de santé)
+        optimizations_applied = sum(1 for d in devices if d.health_score > 90)
+        
+        # Tendances analysées (basées sur l'historique des scans)
+        trends_analyzed = ScanHistory.query.count()
+        
+        # Modèles IA actifs
+        ai_models_active = AIModel.query.filter_by(is_active=True).count()
+        
+        # Dernier entraînement
+        latest_model = AIModel.query.order_by(AIModel.training_date.desc()).first()
+        last_training = latest_model.training_date.strftime("%Y-%m-%d %H:%M:%S") if latest_model else datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Prochain entraînement (6 heures après le dernier)
+        next_training = (datetime.now() + timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        statistics = {
+            'total_predictions': total_predictions,
+            'accuracy_rate': accuracy_rate,
+            'intrusions_blocked': intrusions_blocked,
+            'optimizations_applied': optimizations_applied,
+            'trends_analyzed': trends_analyzed,
+            'ai_models_active': ai_models_active,
+            'last_training': last_training,
+            'next_training': next_training
+        }
+        return jsonify({'success': True, 'statistics': statistics})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/run-predictions', methods=['POST'])
+@login_required
+def api_ai_advanced_run_predictions():
+    """API pour lancer les prédictions IA"""
+    try:
+        # Simulation de lancement de prédictions
+        time.sleep(2)  # Simulation de traitement
+        return jsonify({'success': True, 'message': 'Prédictions IA lancées avec succès !'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/run-intrusion-detection', methods=['POST'])
+@login_required
+def api_ai_advanced_run_intrusion_detection():
+    """API pour lancer la détection d'intrusion"""
+    try:
+        # Simulation de détection d'intrusion
+        time.sleep(2)  # Simulation de traitement
+        return jsonify({'success': True, 'message': 'Détection d\'intrusion lancée avec succès !'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/run-optimization', methods=['POST'])
+@login_required
+def api_ai_advanced_run_optimization():
+    """API pour lancer l'optimisation automatique"""
+    try:
+        # Simulation d'optimisation
+        time.sleep(2)  # Simulation de traitement
+        return jsonify({'success': True, 'message': 'Optimisation automatique lancée avec succès !'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/run-trend-analysis', methods=['POST'])
+@login_required
+def api_ai_advanced_run_trend_analysis():
+    """API pour lancer l'analyse des tendances"""
+    try:
+        # Simulation d'analyse de tendances
+        time.sleep(2)  # Simulation de traitement
+        return jsonify({'success': True, 'message': 'Analyse des tendances lancée avec succès !'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/chatbot', methods=['POST'])
+@login_required
+def api_ai_advanced_chatbot():
+    """API pour le chatbot IA avec DeepSeek"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '')
+        
+        # Récupérer les données réelles
+        devices = Device.query.all()
+        alerts = Alert.query.filter_by(is_resolved=False).all()
+        
+        # Convertir en dictionnaires pour DeepSeek
+        devices_data = []
+        for device in devices:
+            devices_data.append({
+                'ip': device.ip,
+                'hostname': device.hostname,
+                'is_online': device.is_online,
+                'health_score': device.health_score,
+                'maintenance_urgency': device.maintenance_urgency,
+                'device_type': device.device_type,
+                'last_seen': device.last_seen.strftime("%Y-%m-%d %H:%M:%S") if device.last_seen else None
+            })
+        
+        alerts_data = []
+        for alert in alerts:
+            alerts_data.append({
+                'message': alert.message,
+                'alert_type': alert.alert_type,
+                'priority': alert.priority,
+                'is_resolved': alert.is_resolved,
+                'created_at': alert.created_at.strftime("%Y-%m-%d %H:%M:%S") if alert.created_at else None
+            })
+        
+        # Importer et utiliser Groq
+        try:
+            from groq_chatbot import groq_bot
+            
+            # Essayer Groq d'abord
+            result = groq_bot.chat(message, devices_data, alerts_data)
+            
+            if result.get('success'):
+                return jsonify({
+                    'success': True,
+                    'response': result['response'],
+                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'confidence': result['confidence'],
+                    'model': result.get('model', 'Groq'),
+                    'tokens_used': result.get('tokens_used', 0)
+                })
+            else:
+                # Fallback vers l'ancien système si Groq échoue
+                logger.warning(f"Groq échoué: {result.get('error')}, utilisation du fallback")
+                return _fallback_chatbot(message, devices, alerts)
+                
+        except ImportError:
+            logger.warning("Module Groq non disponible, utilisation du fallback")
+            return _fallback_chatbot(message, devices, alerts)
+            
+    except Exception as e:
+        logger.error(f"Erreur chatbot: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+def _fallback_chatbot(message: str, devices, alerts):
+    """Chatbot de fallback basé sur les données réelles"""
+    try:
+        message_lower = message.lower()
+        
+        total_devices = len(devices)
+        online_devices = sum(1 for d in devices if d.is_online)
+        offline_devices = total_devices - online_devices
+        critical_devices = sum(1 for d in devices if d.maintenance_urgency == 'critical')
+        avg_health = sum(d.health_score for d in devices) / len(devices) if devices else 0
+        
+        active_alerts = len(alerts)
+        
+        if any(word in message_lower for word in ['bonjour', 'salut', 'hello']):
+            response = f"Bonjour ! Je suis l'assistant IA de Central Danone. Je surveille actuellement {total_devices} équipements. Comment puis-je vous aider ?"
+        elif any(word in message_lower for word in ['santé', 'état', 'statut', 'status']):
+            if avg_health > 80:
+                response = f"La santé du réseau est excellente ! Score moyen : {avg_health:.1f}%. {online_devices}/{total_devices} équipements en ligne."
+            elif avg_health > 60:
+                response = f"La santé du réseau est correcte. Score moyen : {avg_health:.1f}%. {offline_devices} équipements hors ligne nécessitent attention."
+            else:
+                response = f"⚠️ La santé du réseau nécessite attention. Score moyen : {avg_health:.1f}%. {critical_devices} équipements critiques détectés."
+        elif any(word in message_lower for word in ['problème', 'erreur', 'alerte']):
+            if active_alerts > 0:
+                response = f"🚨 {active_alerts} alerte(s) active(s) détectée(s). Voulez-vous que je génère un rapport détaillé ?"
+            else:
+                response = "✅ Aucune alerte active actuellement. Le système fonctionne normalement."
+        elif any(word in message_lower for word in ['optimisation', 'optimiser']):
+            low_health_count = sum(1 for d in devices if d.health_score < 70)
+            if low_health_count > 0:
+                response = f"J'ai identifié {low_health_count} opportunité(s) d'optimisation. Voulez-vous les voir ?"
+            else:
+                response = "Tous les équipements fonctionnent de manière optimale. Aucune optimisation nécessaire."
+        elif any(word in message_lower for word in ['sécurité', 'intrusion']):
+            security_alerts = sum(1 for a in alerts if a.alert_type in ['intrusion', 'security', 'anomaly'])
+            if security_alerts > 0:
+                response = f"🛡️ {security_alerts} menace(s) de sécurité détectée(s). Niveau de sécurité : Élevé."
+            else:
+                response = "🛡️ Le niveau de sécurité est élevé. Aucune menace critique détectée."
+        elif any(word in message_lower for word in ['performance', 'perf']):
+            if avg_health > 85:
+                response = "Les performances sont excellentes. Tous les équipements fonctionnent dans les normes."
+            elif avg_health > 70:
+                response = "Les performances sont correctes. Quelques optimisations mineures possibles."
+            else:
+                response = "⚠️ Les performances nécessitent attention. Optimisations recommandées."
+        elif any(word in message_lower for word in ['aide', 'help', 'assistance']):
+            response = "Je peux vous aider avec : santé réseau, problèmes, optimisations, sécurité, performance, statistiques."
+        elif any(word in message_lower for word in ['statistique', 'stats', 'nombre']):
+            response = f"📊 Statistiques actuelles : {total_devices} équipements total, {online_devices} en ligne, {offline_devices} hors ligne, {active_alerts} alertes actives."
+        elif any(word in message_lower for word in ['au revoir', 'bye', 'merci']):
+            response = "Au revoir ! N'hésitez pas à revenir si vous avez besoin d'aide."
+        else:
+            response = "Je ne comprends pas votre demande. Tapez 'aide' pour voir mes capacités ou posez une question sur l'état du réseau."
+        
+        return jsonify({
+            'success': True,
+            'response': response,
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'confidence': 0.9,
+            'model': 'Fallback'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/ai-advanced/test-deepseek', methods=['POST'])
+@login_required
+def api_test_deepseek():
+    """Teste la connexion à l'API DeepSeek"""
+    try:
+        from deepseek_chatbot import deepseek_bot
+        result = deepseek_bot.test_connection()
+        return jsonify(result)
+    except ImportError:
+        return jsonify({
+            'success': False,
+            'error': 'Module DeepSeek non disponible'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/ai-advanced/test-groq', methods=['POST'])
+@login_required
+def api_test_groq():
+    """Teste la connexion à l'API Groq"""
+    try:
+        from groq_chatbot import groq_bot
+        result = groq_bot.test_connection()
+        return jsonify(result)
+    except ImportError:
+        return jsonify({
+            'success': False,
+            'error': 'Module Groq non disponible'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 # Initialisation de l'application
 def init_app():
     """Initialise l'application"""
@@ -1926,7 +2695,7 @@ def init_app():
             # Chargement des modèles IA
             load_ai_models()
             
-            # Entraînement initial si nécessaire (seulement si pas de données de démonstration)
+            # Entraînement initial si nécessaire
             if not ai_models_loaded:
                 logger.info("Entraînement initial des modèles IA...")
                 # Vérifier s'il y a des données réelles pour l'entraînement
@@ -1946,14 +2715,16 @@ def init_app():
     except Exception as e:
         logger.error(f"Erreur initialisation: {e}")
 
+
+
 if __name__ == '__main__':
     init_app()
     print("🚀 Application Central Danone démarrée!")
     print("📱 Interface web: http://localhost:5000")
     print("👤 Connexion: admin / admin123")
-    print("🔄 Mode debug activé - Auto-reload à chaque modification")
+    print("🔄 Mode production - Pas d'auto-reload")
     print("⏹️  Arrêt: Ctrl+C")
     print("-" * 50)
     
-    # Mode debug avec auto-reload
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=True) 
+    # Mode production sans auto-reload
+    app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False) 

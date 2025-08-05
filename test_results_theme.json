@@ -1,0 +1,272 @@
+[
+  {
+    "test": "Fichier theme.css",
+    "status": "PASS",
+    "message": "Fichier CSS trouvé",
+    "timestamp": "2025-08-03T22:10:31.392070"
+  },
+  {
+    "test": "Variable CSS --danone-blue",
+    "status": "PASS",
+    "message": "Variable --danone-blue définie",
+    "timestamp": "2025-08-03T22:10:31.393816"
+  },
+  {
+    "test": "Variable CSS --bg-primary",
+    "status": "PASS",
+    "message": "Variable --bg-primary définie",
+    "timestamp": "2025-08-03T22:10:31.393990"
+  },
+  {
+    "test": "Variable CSS --text-primary",
+    "status": "PASS",
+    "message": "Variable --text-primary définie",
+    "timestamp": "2025-08-03T22:10:31.394086"
+  },
+  {
+    "test": "Variable CSS [data-theme=\"dark\"]",
+    "status": "PASS",
+    "message": "Variable [data-theme=\"dark\"] définie",
+    "timestamp": "2025-08-03T22:10:31.394157"
+  },
+  {
+    "test": "Variable CSS --card-bg",
+    "status": "PASS",
+    "message": "Variable --card-bg définie",
+    "timestamp": "2025-08-03T22:10:31.394217"
+  },
+  {
+    "test": "Variable CSS --navbar-bg",
+    "status": "PASS",
+    "message": "Variable --navbar-bg définie",
+    "timestamp": "2025-08-03T22:10:31.394265"
+  },
+  {
+    "test": "Fichier theme.js",
+    "status": "PASS",
+    "message": "Fichier JavaScript trouvé",
+    "timestamp": "2025-08-03T22:10:31.394458"
+  },
+  {
+    "test": "Classe JS class ThemeManager",
+    "status": "PASS",
+    "message": "Classe class ThemeManager trouvée",
+    "timestamp": "2025-08-03T22:10:31.395610"
+  },
+  {
+    "test": "Classe JS class NotificationManager",
+    "status": "PASS",
+    "message": "Classe class NotificationManager trouvée",
+    "timestamp": "2025-08-03T22:10:31.395713"
+  },
+  {
+    "test": "Classe JS class AnimationManager",
+    "status": "PASS",
+    "message": "Classe class AnimationManager trouvée",
+    "timestamp": "2025-08-03T22:10:31.395779"
+  },
+  {
+    "test": "Classe JS class ResponsiveManager",
+    "status": "PASS",
+    "message": "Classe class ResponsiveManager trouvée",
+    "timestamp": "2025-08-03T22:10:31.395874"
+  },
+  {
+    "test": "Méthode toggleTheme",
+    "status": "PASS",
+    "message": "Méthode toggleTheme trouvée",
+    "timestamp": "2025-08-03T22:10:31.395936"
+  },
+  {
+    "test": "Méthode setTheme",
+    "status": "PASS",
+    "message": "Méthode setTheme trouvée",
+    "timestamp": "2025-08-03T22:10:31.395992"
+  },
+  {
+    "test": "Méthode getStoredTheme",
+    "status": "PASS",
+    "message": "Méthode getStoredTheme trouvée",
+    "timestamp": "2025-08-03T22:10:31.396056"
+  },
+  {
+    "test": "Méthode applyTheme",
+    "status": "PASS",
+    "message": "Méthode applyTheme trouvée",
+    "timestamp": "2025-08-03T22:10:31.396119"
+  },
+  {
+    "test": "Template base.html",
+    "status": "PASS",
+    "message": "Template trouvé",
+    "timestamp": "2025-08-03T22:10:31.396395"
+  },
+  {
+    "test": "Lien theme.css",
+    "status": "PASS",
+    "message": "Lien CSS trouvé",
+    "timestamp": "2025-08-03T22:10:31.397133"
+  },
+  {
+    "test": "Lien theme.js",
+    "status": "PASS",
+    "message": "Lien JavaScript trouvé",
+    "timestamp": "2025-08-03T22:10:31.397243"
+  },
+  {
+    "test": "Attribut data-theme",
+    "status": "PASS",
+    "message": "Attribut data-theme trouvé",
+    "timestamp": "2025-08-03T22:10:31.397311"
+  },
+  {
+    "test": "Switch de thème CSS",
+    "status": "PASS",
+    "message": "Styles du switch trouvés",
+    "timestamp": "2025-08-03T22:10:31.397861"
+  },
+  {
+    "test": "Slider du switch",
+    "status": "PASS",
+    "message": "Styles du slider trouvés",
+    "timestamp": "2025-08-03T22:10:31.397937"
+  },
+  {
+    "test": "localStorage",
+    "status": "PASS",
+    "message": "localStorage utilisé",
+    "timestamp": "2025-08-03T22:10:31.398464"
+  },
+  {
+    "test": "Méthodes localStorage",
+    "status": "PASS",
+    "message": "Méthodes getItem/setItem trouvées",
+    "timestamp": "2025-08-03T22:10:31.398538"
+  },
+  {
+    "test": "Variable sombre --bg-primary",
+    "status": "PASS",
+    "message": "Variable sombre trouvée",
+    "timestamp": "2025-08-03T22:10:31.398948"
+  },
+  {
+    "test": "Variable sombre --text-primary",
+    "status": "PASS",
+    "message": "Variable sombre trouvée",
+    "timestamp": "2025-08-03T22:10:31.399029"
+  },
+  {
+    "test": "Variable sombre --card-bg",
+    "status": "PASS",
+    "message": "Variable sombre trouvée",
+    "timestamp": "2025-08-03T22:10:31.399090"
+  },
+  {
+    "test": "Variable sombre --navbar-bg",
+    "status": "PASS",
+    "message": "Variable sombre trouvée",
+    "timestamp": "2025-08-03T22:10:31.399174"
+  },
+  {
+    "test": "Animation @keyframes fadeIn",
+    "status": "PASS",
+    "message": "Animation @keyframes fadeIn trouvée",
+    "timestamp": "2025-08-03T22:10:31.399655"
+  },
+  {
+    "test": "Animation @keyframes slideIn",
+    "status": "PASS",
+    "message": "Animation @keyframes slideIn trouvée",
+    "timestamp": "2025-08-03T22:10:31.399744"
+  },
+  {
+    "test": "Animation @keyframes pulse",
+    "status": "PASS",
+    "message": "Animation @keyframes pulse trouvée",
+    "timestamp": "2025-08-03T22:10:31.399835"
+  },
+  {
+    "test": "Animation @keyframes spin",
+    "status": "PASS",
+    "message": "Animation @keyframes spin trouvée",
+    "timestamp": "2025-08-03T22:10:31.399918"
+  },
+  {
+    "test": "Classe animation .fade-in",
+    "status": "PASS",
+    "message": "Classe .fade-in trouvée",
+    "timestamp": "2025-08-03T22:10:31.399980"
+  },
+  {
+    "test": "Classe animation .slide-in",
+    "status": "PASS",
+    "message": "Classe .slide-in trouvée",
+    "timestamp": "2025-08-03T22:10:31.400055"
+  },
+  {
+    "test": "Classe animation .pulse",
+    "status": "PASS",
+    "message": "Classe .pulse trouvée",
+    "timestamp": "2025-08-03T22:10:31.400113"
+  },
+  {
+    "test": "Classe animation .spinner",
+    "status": "PASS",
+    "message": "Classe .spinner trouvée",
+    "timestamp": "2025-08-03T22:10:31.400158"
+  },
+  {
+    "test": "Media query @media (max-width: 768px)",
+    "status": "PASS",
+    "message": "Media query @media (max-width: 768px) trouvée",
+    "timestamp": "2025-08-03T22:10:31.400643"
+  },
+  {
+    "test": "Media query @media (min-width: 769px) and (max-width: 1024px)",
+    "status": "PASS",
+    "message": "Media query @media (min-width: 769px) and (max-width: 1024px) trouvée",
+    "timestamp": "2025-08-03T22:10:31.400725"
+  },
+  {
+    "test": "Classe responsive .mobile-card",
+    "status": "PASS",
+    "message": "Classe .mobile-card trouvée",
+    "timestamp": "2025-08-03T22:10:31.400805"
+  },
+  {
+    "test": "Classe responsive .mobile-view",
+    "status": "PASS",
+    "message": "Classe .mobile-view trouvée",
+    "timestamp": "2025-08-03T22:10:31.400865"
+  },
+  {
+    "test": "Classe responsive .touch-device",
+    "status": "PASS",
+    "message": "Classe .touch-device trouvée",
+    "timestamp": "2025-08-03T22:10:31.400928"
+  },
+  {
+    "test": "Fonctionnalité showNotification",
+    "status": "PASS",
+    "message": "Fonctionnalité showNotification trouvée",
+    "timestamp": "2025-08-03T22:10:31.401565"
+  },
+  {
+    "test": "Fonctionnalité showToast",
+    "status": "PASS",
+    "message": "Fonctionnalité showToast trouvée",
+    "timestamp": "2025-08-03T22:10:31.401696"
+  },
+  {
+    "test": "Fonctionnalité requestPermission",
+    "status": "PASS",
+    "message": "Fonctionnalité requestPermission trouvée",
+    "timestamp": "2025-08-03T22:10:31.401768"
+  },
+  {
+    "test": "Fonctionnalité Notification",
+    "status": "PASS",
+    "message": "Fonctionnalité Notification trouvée",
+    "timestamp": "2025-08-03T22:10:31.401833"
+  }
+]

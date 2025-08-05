@@ -53,6 +53,15 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="avgHealthScore">
                                 {{ "%.1f"|format(avg_health_score) }}%
                             </div>
+                            <small class="text-muted">
+                                {% if avg_health_score >= 80 %}
+                                    <span class="text-success">Excellent état</span>
+                                {% elif avg_health_score >= 60 %}
+                                    <span class="text-warning">Attention requise</span>
+                                {% else %}
+                                    <span class="text-danger">Intervention urgente</span>
+                                {% endif %}
+                            </small>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
@@ -73,6 +82,13 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="criticalDevices">
                                 {{ critical_devices if critical_devices is defined else 0 }}
                             </div>
+                            <small class="text-muted">
+                                {% if critical_devices == 0 %}
+                                    <span class="text-success">Aucun problème critique</span>
+                                {% else %}
+                                    <span class="text-danger">Maintenance urgente requise</span>
+                                {% endif %}
+                            </small>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
@@ -93,6 +109,13 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="highRiskDevices">
                                 {{ high_risk_devices_count if high_risk_devices_count is defined else 0 }}
                             </div>
+                            <small class="text-muted">
+                                {% if high_risk_devices_count == 0 %}
+                                    <span class="text-success">Risque faible</span>
+                                {% else %}
+                                    <span class="text-warning">Surveillance requise</span>
+                                {% endif %}
+                            </small>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
@@ -113,6 +136,13 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800" id="anomalyDevices">
                                 {{ anomaly_devices_count if anomaly_devices_count is defined else 0 }}
                             </div>
+                            <small class="text-muted">
+                                {% if anomaly_devices_count == 0 %}
+                                    <span class="text-success">Aucune anomalie</span>
+                                {% else %}
+                                    <span class="text-info">Analyse en cours</span>
+                                {% endif %}
+                            </small>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-search fa-2x text-gray-300"></i>
@@ -383,9 +413,10 @@ function trainAIModels() {
     .then(data => {
         if (data.status === 'success') {
             showAlert('success', 'Entraînement IA lancé avec succès');
-            setTimeout(() => {
-                location.reload();
-            }, 3000);
+            // Suppression du reload automatique
+            // setTimeout(() => {
+            //     location.reload();
+            // }, 3000);
         } else {
             showAlert('error', 'Erreur lors de l\'entraînement IA');
         }
