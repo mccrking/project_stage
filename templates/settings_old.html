@@ -1,0 +1,1280 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - Central Danone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-header {
+        background: linear-gradient(135deg, #6f42c1, #495057);
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-lg);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .settings-header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+    
+    .settings-nav {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-lg);
+        border: 1px solid var(--border-color);
+    }
+    
+    .settings-tab {
+        background: transparent;
+        border: none;
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+        color: var(--text-secondary);
+        width: 100%;
+        text-align: left;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .settings-tab:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    .settings-tab.active {
+        background: var(--danone-blue);
+        color: white;
+    }
+    
+    .settings-section {
+        display: none;
+    }
+    
+    .settings-section.active {
+        display: block;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    .network-test-result {
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        border-radius: var(--radius-md);
+        border-left: 4px solid;
+    }
+    
+    .test-success {
+        background: rgba(40, 167, 69, 0.1);
+        border-left-color: #28a745;
+        color: #28a745;
+    }
+    
+    .test-error {
+        background: rgba(220, 53, 69, 0.1);
+        border-left-color: #dc3545;
+        color: #dc3545;
+    }
+    
+    .config-assistant {
+        background: linear-gradient(135deg, rgba(0, 102, 204, 0.1), rgba(51, 136, 221, 0.1));
+        border-left: 4px solid var(--danone-blue);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .advanced-toggle {
+        cursor: pointer;
+        color: var(--danone-blue);
+        text-decoration: none;
+        font-size: 0.9rem;
+        border: 1px solid var(--border-color);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-md);
+        background: var(--card-bg);
+        transition: all var(--transition-fast);
+    }
+    
+    .advanced-toggle:hover {
+        background: var(--bg-secondary);
+        text-decoration: none;
+        color: var(--danone-blue);
+    }
+    
+    .security-setting {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .security-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .status-secure { background: #28a745; color: white; }
+    .status-warning { background: #ffc107; color: #000; }
+    .status-danger { background: #dc3545; color: white; }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--danone-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .backup-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        transition: all var(--transition-normal);
+    }
+    
+    .backup-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+    
+    .wizard-step {
+        display: none;
+    }
+    
+    .wizard-step.active {
+        display: block;
+        animation: slideInRight 0.3s ease-in-out;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+    
+    .step::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--border-color);
+        z-index: 1;
+    }
+    
+    .step:first-child::before {
+        display: none;
+    }
+    
+    .step-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--border-color);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        position: relative;
+        z-index: 2;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .step.completed .step-circle,
+    .step.active .step-circle {
+        background: var(--danone-blue);
+    }
+    
+    .step.completed::before {
+        background: var(--danone-blue);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Settings Header -->
+<div class="settings-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="h2 mb-2">
+                <i class="fas fa-cogs me-3"></i>
+                Centre de Configuration Central Danone
+            </h1>
+            <p class="mb-0 opacity-90">Configuration avancée et gestion du système de supervision</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex flex-column align-items-md-end">
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-light btn-sm" onclick="launchConfigWizard()">
+                        <i class="fas fa-magic me-2"></i>Assistant
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="exportConfig()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="resetToDefaults()">
+                        <i class="fas fa-undo me-2"></i>Défauts
+                    </button>
+                </div>
+                <div class="text-white-50">
+                    <small>Dernière sauvegarde</small><br>
+                    <span id="settings-last-save" class="fw-bold">--:--:--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Assistant -->
+<div class="config-assistant">
+    <div class="row align-items-center">
+        <div class="col-md-1">
+            <i class="fas fa-robot fa-2x text-primary"></i>
+        </div>
+        <div class="col-md-11">
+            <h6 class="mb-1"><i class="fas fa-magic me-2"></i>Assistant IA de Configuration</h6>
+            <p class="mb-2">L'IA peut vous aider à configurer automatiquement votre réseau en détectant les paramètres optimaux.</p>
+            <button class="btn btn-sm btn-primary" onclick="startAutoConfig()">
+                <i class="fas fa-play me-2"></i>Démarrer la Configuration Automatique
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="row">
+    <!-- Settings Navigation -->
+    <div class="col-lg-3">
+        <div class="settings-nav">
+            <h6 class="text-muted mb-3 px-3">CATÉGORIES</h6>
+            <button class="settings-tab active" data-section="network">
+                <i class="fas fa-network-wired me-2"></i>Réseau & Scan
+            </button>
+            <button class="settings-tab" data-section="alerts">
+                <i class="fas fa-bell me-2"></i>Alertes & Notifications
+            </button>
+            <button class="settings-tab" data-section="ai">
+                <i class="fas fa-brain me-2"></i>Intelligence Artificielle
+            </button>
+            <button class="settings-tab" data-section="security">
+                <i class="fas fa-shield-alt me-2"></i>Sécurité & Accès
+            </button>
+            <button class="settings-tab" data-section="users">
+                <i class="fas fa-users me-2"></i>Utilisateurs & Rôles
+            </button>
+            <button class="settings-tab" data-section="reports">
+                <i class="fas fa-chart-bar me-2"></i>Rapports & Export
+            </button>
+            <button class="settings-tab" data-section="system">
+                <i class="fas fa-server me-2"></i>Système & Performance
+            </button>
+            <button class="settings-tab" data-section="backup">
+                <i class="fas fa-save me-2"></i>Sauvegarde & Restore
+            </button>
+        </div>
+    </div>
+    
+    <!-- Settings Content -->
+    <div class="col-lg-9">
+        <!-- Network Settings Section -->
+        <div class="settings-section active" id="network-section">
+            <div class="card card-enhanced">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-network-wired me-2"></i>Configuration Réseau
+                    </h5>
+                    <button class="advanced-toggle" onclick="toggleAdvanced('network')">
+                        <i class="fas fa-cog me-1"></i>Paramètres Avancés
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form id="network-settings-form">
+                        <!-- Basic Network Settings -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Plage Réseau à Scanner</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
+                                    <input type="text" class="form-control form-control-enhanced" 
+                                           id="network-range" value="{{ network_range or '192.168.1.0/24' }}"
+                                           placeholder="192.168.1.0/24">
+                                    <button class="btn btn-outline-primary" type="button" onclick="detectNetwork()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Format CIDR. Cliquez sur l'icône de recherche pour détecter automatiquement</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Intervalle de Scan</label>
+                                <select class="form-select form-control-enhanced" id="scan-interval">
+                                    <option value="5">5 minutes</option>
+                                    <option value="15">15 minutes</option>
+                                    <option value="30" selected>30 minutes</option>
+                                    <option value="60">1 heure</option>
+                                    <option value="120">2 heures</option>
+                                    <option value="240">4 heures</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Network Settings (Hidden by default) -->
+                        <div id="network-advanced" style="display: none;">
+                            <hr>
+                            <h6 class="text-muted mb-3">Paramètres Avancés</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Timeout de Scan (sec)</label>
+                                    <input type="number" class="form-control form-control-enhanced" 
+                                           id="scan-timeout" value="10" min="1" max="60">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Tentatives Max</label>
+                                    <input type="number" class="form-control form-control-enhanced" 
+                                           id="max-retries" value="3" min="1" max="10">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Threads Parallèles</label>
+                                    <input type="number" class="form-control form-control-enhanced" 
+                                           id="scan-threads" value="50" min="1" max="200">
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ports à Scanner</label>
+                                    <input type="text" class="form-control form-control-enhanced" 
+                                           id="scan-ports" value="22,23,53,80,135,139,443,445,3389"
+                                           placeholder="22,80,443...">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Méthode de Scan</label>
+                                    <select class="form-select form-control-enhanced" id="scan-method">
+                                        <option value="ping">Ping uniquement</option>
+                                        <option value="tcp" selected>TCP + Ping</option>
+                                        <option value="udp">UDP + TCP + Ping</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enable-mac-detection" checked>
+                                    <label class="form-check-label" for="enable-mac-detection">
+                                        Détection des adresses MAC et vendors
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Network Test -->
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Test de Configuration</h6>
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="testNetwork()">
+                                    <i class="fas fa-vial me-2"></i>Tester la Configuration
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="quickScan()">
+                                    <i class="fas fa-search me-2"></i>Scan Rapide
+                                </button>
+                            </div>
+                            <div id="network-test-result"></div>
+                        </div>
+                        
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alerts Settings Section -->
+        <div class="settings-section" id="alerts-section">
+            <div class="card card-enhanced">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2"></i>Configuration des Alertes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="alerts-settings-form">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Seuil d'Alerte CPU (%)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control form-control-enhanced" 
+                                           id="cpu-threshold" value="80" min="1" max="100">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Seuil d'Alerte Mémoire (%)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control form-control-enhanced" 
+                                           id="memory-threshold" value="85" min="1" max="100">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Notifications Email</label>
+                                <select class="form-select form-control-enhanced" id="email-notifications">
+                                    <option value="disabled">Désactivées</option>
+                                    <option value="critical">Critiques uniquement</option>
+                                    <option value="all" selected>Toutes les alertes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fréquence des Rapports</label>
+                                <select class="form-select form-control-enhanced" id="report-frequency">
+                                    <option value="daily">Quotidien</option>
+                                    <option value="weekly" selected>Hebdomadaire</option>
+                                    <option value="monthly">Mensuel</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Adresse Email de Notification</label>
+                            <input type="email" class="form-control form-control-enhanced" 
+                                   id="notification-email" placeholder="admin@danone.fr">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Types d'Alertes</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-device-down" checked>
+                                        <label class="form-check-label" for="alert-device-down">
+                                            Équipement hors ligne
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-high-cpu" checked>
+                                        <label class="form-check-label" for="alert-high-cpu">
+                                            CPU élevé
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-high-memory" checked>
+                                        <label class="form-check-label" for="alert-high-memory">
+                                            Mémoire élevée
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-disk-space" checked>
+                                        <label class="form-check-label" for="alert-disk-space">
+                                            Espace disque faible
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-network-issues">
+                                        <label class="form-check-label" for="alert-network-issues">
+                                            Problèmes réseau
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="alert-security">
+                                        <label class="form-check-label" for="alert-security">
+                                            Alertes de sécurité
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danone btn-enhanced">
+                            <i class="fas fa-save me-2"></i>Sauvegarder les Alertes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Settings Section -->
+        <div class="settings-section" id="ai-section">
+            <div class="card card-enhanced">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain me-2"></i>Configuration Intelligence Artificielle
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="ai-settings-form">
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable-ai-analysis" checked>
+                                <label class="form-check-label" for="enable-ai-analysis">
+                                    <strong>Activer l'Analyse IA</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">Active l'analyse automatique des données et la génération de recommandations</div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Modèle IA Principal</label>
+                                <select class="form-select form-control-enhanced" id="ai-model">
+                                    <option value="deepseek" selected>DeepSeek (Recommandé)</option>
+                                    <option value="groq">Groq Llama</option>
+                                    <option value="local">Modèle Local</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fréquence d'Analyse</label>
+                                <select class="form-select form-control-enhanced" id="ai-frequency">
+                                    <option value="realtime">Temps réel</option>
+                                    <option value="5min">Toutes les 5 min</option>
+                                    <option value="15min" selected>Toutes les 15 min</option>
+                                    <option value="30min">Toutes les 30 min</option>
+                                    <option value="1hour">Toutes les heures</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Clé API DeepSeek</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control form-control-enhanced" 
+                                       id="deepseek-api-key" placeholder="sk-...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('deepseek-api-key')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Fonctionnalités IA</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-anomaly-detection" checked>
+                                        <label class="form-check-label" for="ai-anomaly-detection">
+                                            Détection d'Anomalies
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-predictive-analysis" checked>
+                                        <label class="form-check-label" for="ai-predictive-analysis">
+                                            Analyse Prédictive
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-auto-recommendations" checked>
+                                        <label class="form-check-label" for="ai-auto-recommendations">
+                                            Recommandations Automatiques
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-chatbot" checked>
+                                        <label class="form-check-label" for="ai-chatbot">
+                                            Assistant Conversationnel
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-report-generation">
+                                        <label class="form-check-label" for="ai-report-generation">
+                                            Génération de Rapports IA
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ai-learning">
+                                        <label class="form-check-label" for="ai-learning">
+                                            Apprentissage Adaptatif
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danone btn-enhanced">
+                                <i class="fas fa-save me-2"></i>Sauvegarder IA
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-enhanced" onclick="testAI()">
+                                <i class="fas fa-vial me-2"></i>Tester l'IA
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+                        Sauvegarder les paramètres d'alertes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test d'alerte -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-test-tube me-2"></i>
+                Test des alertes
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Tester la configuration des alertes</p>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-warning" id="btn-test-alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Tester une alerte
+                    </button>
+                    
+                    <button class="btn btn-outline-info" id="btn-test-email">
+                        <i class="fas fa-envelope me-2"></i>
+                        Tester l'email simple
+                    </button>
+                </div>
+                
+                <hr>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Paramètres de rapports -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-alt me-2"></i>
+                Configuration des rapports
+            </div>
+            <div class="card-body">
+                <form id="report-settings-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="auto-report" class="form-label">Rapport automatique</label>
+                            <select class="form-select" id="auto-report">
+                                <option value="none">Aucun</option>
+                                <option value="daily" selected>Journalier</option>
+                                <option value="weekly">Hebdomadaire</option>
+                                <option value="monthly">Mensuel</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="report-format" class="form-label">Format par défaut</label>
+                            <select class="form-select" id="report-format">
+                                <option value="pdf" selected>PDF</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report-time" class="form-label">Heure de génération</label>
+                            <input type="time" class="form-control" id="report-time" value="08:00">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="report-retention" class="form-label">Rétention (jours)</label>
+                            <input type="number" class="form-control" id="report-retention" 
+                                   value="30" min="1" max="365">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-charts" checked>
+                            <label class="form-check-label" for="include-charts">
+                                Inclure les graphiques dans les rapports
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-alerts" checked>
+                            <label class="form-check-label" for="include-alerts">
+                                Inclure l'historique des alertes
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        Sauvegarder les paramètres de rapports
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques des rapports -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-2"></i>
+                Statistiques des rapports
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="stat-number text-primary">12</div>
+                        <div class="stat-label">Ce mois</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-number text-success">2.3 MB</div>
+                        <div class="stat-label">Taille moyenne</div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Prochain rapport</h6>
+                <p class="mb-2">
+                    <strong>Type:</strong> Journalier<br>
+                    <strong>Format:</strong> PDF<br>
+                    <strong>Heure:</strong> 08:00 (demain)<br>
+                    <strong>Statut:</strong> <span class="badge bg-success">Programmé</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Paramètres système -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-server me-2"></i>
+                Paramètres système
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informations système</h6>
+                        <table class="table table-sm">
+                            <tr><td>Version:</td><td>1.0.0</td></tr>
+                            <tr><td>Base de données:</td><td>SQLite</td></tr>
+                            <tr><td>Dernière mise à jour:</td><td>2024-12-01</td></tr>
+                            <tr><td>Statut:</td><td><span class="badge bg-success">Opérationnel</span></td></tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Actions système</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" id="btn-backup">
+                                <i class="fas fa-download me-2"></i>
+                                Sauvegarde de la base de données
+                            </button>
+                            
+                            <button class="btn btn-outline-warning" id="btn-clear-cache">
+                                <i class="fas fa-broom me-2"></i>
+                                Vider le cache
+                            </button>
+                            
+                            <button class="btn btn-outline-danger" id="btn-reset-settings">
+                                <i class="fas fa-undo me-2"></i>
+                                Réinitialiser les paramètres
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration email pour alertes -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-envelope me-2"></i>
+                Configuration des alertes par email
+            </div>
+            <div class="card-body">
+                <form id="email-settings-form">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email-enabled">
+                            <label class="form-check-label" for="email-enabled">
+                                Activer les alertes par email
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="smtp-server" class="form-label">Serveur SMTP</label>
+                            <input type="text" class="form-control" id="smtp-server" 
+                                   value="smtp.gmail.com" placeholder="smtp.gmail.com">
+                            <div class="form-text">Serveur SMTP (ex: smtp.gmail.com, smtp.outlook.com)</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="smtp-port" class="form-label">Port SMTP</label>
+                            <input type="number" class="form-control" id="smtp-port" 
+                                   value="587" placeholder="587">
+                            <div class="form-text">Port SMTP (587 pour TLS, 465 pour SSL)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email-username" class="form-label">Nom d'utilisateur</label>
+                            <input type="email" class="form-control" id="email-username" 
+                                   placeholder="votre.email@gmail.com">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email-password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="email-password" 
+                                   placeholder="Mot de passe ou mot de passe d'application">
+                            <div class="form-text">Pour Gmail, utilisez un mot de passe d'application</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="from-email" class="form-label">Email d'expédition</label>
+                            <input type="email" class="form-control" id="from-email" 
+                                   placeholder="supervision@centraldanone.com">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="to-email" class="form-label">Email de destination</label>
+                            <input type="email" class="form-control" id="to-email" 
+                                   placeholder="admin@centraldanone.com" required>
+                            <div class="form-text">Email qui recevra les alertes</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            Sauvegarder la configuration email
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-info" id="btn-test-email-config">
+                            <i class="fas fa-paper-plane me-2"></i>
+                            Tester la configuration
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-warning" id="btn-send-test-alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Envoyer une alerte de test
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aide configuration email -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-envelope me-2"></i>
+                Configuration email
+            </div>
+            <div class="card-body">
+                <h6>Configuration Gmail</h6>
+                <ul class="small">
+                    <li>Serveur: smtp.gmail.com</li>
+                    <li>Port: 587</li>
+                    <li>Activer l'authentification à 2 facteurs</li>
+                    <li>Générer un mot de passe d'application</li>
+                </ul>
+                
+                <hr>
+                
+                <h6>Configuration Outlook</h6>
+                <ul class="small">
+                    <li>Serveur: smtp-mail.outlook.com</li>
+                    <li>Port: 587</li>
+                    <li>Utiliser votre mot de passe normal</li>
+                </ul>
+                
+                <hr>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Charger les paramètres actuels
+    loadSettings();
+    
+    // Gestion des formulaires
+    document.getElementById('network-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveNetworkSettings();
+    });
+    
+    document.getElementById('alert-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveAlertSettings();
+    });
+    
+    document.getElementById('report-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveReportSettings();
+    });
+    
+    document.getElementById('email-settings-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveEmailSettings();
+    });
+    
+    // Test des alertes
+    document.getElementById('btn-test-alert').addEventListener('click', function() {
+        showAlert('warning', 'Test d\'alerte - Ceci est un message de test');
+    });
+    
+    document.getElementById('btn-test-email').addEventListener('click', function() {
+        const email = document.getElementById('alert-email').value;
+        if (email) {
+            showAlert('info', `Test d'email envoyé à ${email}`);
+        } else {
+            showAlert('warning', 'Veuillez configurer une adresse email d\'alerte');
+        }
+    });
+    
+    // Test configuration email
+    document.getElementById('btn-test-email-config').addEventListener('click', function() {
+        testEmailConfiguration();
+    });
+    
+    document.getElementById('btn-send-test-alert').addEventListener('click', function() {
+        sendTestAlert();
+    });
+    
+    // Synchronisation des champs email
+    document.getElementById('alert-email').addEventListener('input', function() {
+        const simpleEmail = this.value;
+        if (simpleEmail) {
+            document.getElementById('to-email').value = simpleEmail;
+        }
+    });
+    
+    document.getElementById('to-email').addEventListener('input', function() {
+        const smtpEmail = this.value;
+        if (smtpEmail) {
+            document.getElementById('alert-email').value = smtpEmail;
+        }
+    });
+    
+    // Actions système
+    document.getElementById('btn-backup').addEventListener('click', function() {
+        showAlert('info', 'Sauvegarde de la base de données en cours...');
+    });
+    
+    document.getElementById('btn-clear-cache').addEventListener('click', function() {
+        if (confirm('Voulez-vous vraiment vider le cache ?')) {
+            showAlert('success', 'Cache vidé avec succès');
+        }
+    });
+    
+    document.getElementById('btn-reset-settings').addEventListener('click', function() {
+        if (confirm('ATTENTION: Cette action réinitialisera tous les paramètres. Continuer ?')) {
+            showAlert('warning', 'Paramètres réinitialisés aux valeurs par défaut');
+            loadSettings();
+        }
+    });
+    
+    function loadSettings() {
+        // Simuler le chargement des paramètres depuis l'API
+        fetch('/api/settings')
+            .then(response => response.json())
+            .then(settings => {
+                document.getElementById('network-range').value = settings.network_range || '192.168.1.0/24';
+                document.getElementById('scan-interval').value = settings.scan_interval || 60;
+                
+                // Mettre à jour les informations réseau
+                updateNetworkInfo(settings.network_range || '192.168.1.0/24');
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des paramètres:', error);
+            });
+        
+        // Charger la configuration email
+        fetch('/api/settings/email')
+            .then(response => response.json())
+            .then(emailSettings => {
+                document.getElementById('email-enabled').checked = emailSettings.enabled || false;
+                document.getElementById('smtp-server').value = emailSettings.smtp_server || 'smtp.gmail.com';
+                document.getElementById('smtp-port').value = emailSettings.smtp_port || 587;
+                document.getElementById('email-username').value = emailSettings.username || '';
+                document.getElementById('from-email').value = emailSettings.from_email || '';
+                document.getElementById('to-email').value = emailSettings.to_email || '';
+                
+                // Synchroniser avec l'email simple
+                if (emailSettings.to_email) {
+                    document.getElementById('alert-email').value = emailSettings.to_email;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement de la config email:', error);
+            });
+    }
+    
+    function saveNetworkSettings() {
+        const settings = {
+            network_range: document.getElementById('network-range').value,
+            scan_interval: parseInt(document.getElementById('scan-interval').value),
+            scan_timeout: parseInt(document.getElementById('scan-timeout').value),
+            max_retries: parseInt(document.getElementById('max-retries').value),
+            enable_auto_scan: document.getElementById('enable-auto-scan').checked
+        };
+        
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Paramètres réseau sauvegardés avec succès');
+                updateNetworkInfo(settings.network_range);
+            } else {
+                showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors de la sauvegarde: ' + error.message);
+        });
+    }
+    
+    function saveAlertSettings() {
+        const settings = {
+            alert_threshold: parseInt(document.getElementById('alert-threshold').value),
+            alert_device_offline: document.getElementById('alert-device-offline').checked,
+            alert_device_online: document.getElementById('alert-device-online').checked,
+            alert_low_uptime: document.getElementById('alert-low-uptime').checked,
+            alert_scan_failed: document.getElementById('alert-scan-failed').checked
+        };
+        
+        // Sauvegarder l'email simple
+        const alertEmail = document.getElementById('alert-email').value;
+        if (alertEmail) {
+            fetch('/api/settings/alert-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ alert_email: alertEmail })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('success', 'Paramètres d\'alertes et email sauvegardés avec succès');
+                } else {
+                    showAlert('danger', data.message || 'Erreur lors de la sauvegarde');
+                }
+            })
+            .catch(error => {
+                showAlert('danger', 'Erreur lors de la sauvegarde: ' + error.message);
+            });
+        } else {
+            showAlert('success', 'Paramètres d\'alertes sauvegardés avec succès');
+        }
+    }
+    
+    function saveReportSettings() {
+        const settings = {
+            auto_report: document.getElementById('auto-report').value,
+            report_format: document.getElementById('report-format').value,
+            report_time: document.getElementById('report-time').value,
+            report_retention: parseInt(document.getElementById('report-retention').value),
+            include_charts: document.getElementById('include-charts').checked,
+            include_alerts: document.getElementById('include-alerts').checked
+        };
+        
+        showAlert('success', 'Paramètres de rapports sauvegardés avec succès');
+    }
+    
+    function saveEmailSettings() {
+        const settings = {
+            enabled: document.getElementById('email-enabled').checked,
+            smtp_server: document.getElementById('smtp-server').value,
+            smtp_port: parseInt(document.getElementById('smtp-port').value),
+            username: document.getElementById('email-username').value,
+            password: document.getElementById('email-password').value,
+            from_email: document.getElementById('from-email').value,
+            to_email: document.getElementById('to-email').value
+        };
+        
+        // Synchroniser avec l'email simple
+        const simpleEmail = document.getElementById('alert-email').value;
+        if (simpleEmail && !settings.to_email) {
+            settings.to_email = simpleEmail;
+            document.getElementById('to-email').value = simpleEmail;
+        }
+        
+        fetch('/api/settings/email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert('success', 'Configuration email sauvegardée avec succès');
+                // Synchroniser les champs
+                if (settings.to_email) {
+                    document.getElementById('alert-email').value = settings.to_email;
+                }
+            } else {
+                showAlert('danger', data.message || 'Erreur lors de la sauvegarde');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors de la sauvegarde: ' + error.message);
+        });
+    }
+    
+    function testEmailConfiguration() {
+        const button = document.getElementById('btn-test-email-config');
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Test en cours...';
+        button.disabled = true;
+        
+        fetch('/api/settings/email/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert('success', 'Configuration email testée avec succès ! Vérifiez votre boîte mail.');
+            } else {
+                showAlert('danger', data.message || 'Erreur lors du test');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors du test: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    function sendTestAlert() {
+        const button = document.getElementById('btn-send-test-alert');
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Envoi...';
+        button.disabled = true;
+        
+        const testData = {
+            subject: 'Test d\'alerte Central Danone',
+            message: 'Ceci est un test d\'alerte pour vérifier la configuration email du système de supervision Central Danone.',
+            priority: 'medium'
+        };
+        
+        fetch('/api/settings/email/alert', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(testData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showAlert('success', 'Alerte de test envoyée ! Vérifiez votre boîte mail.');
+            } else {
+                showAlert('danger', data.message || 'Erreur lors de l\'envoi');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erreur lors de l\'envoi: ' + error.message);
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    function updateNetworkInfo(networkRange) {
+        // Simuler l'analyse de la plage réseau
+        const parts = networkRange.split('/');
+        const ip = parts[0];
+        const cidr = parseInt(parts[1]);
+        
+        document.getElementById('current-network').textContent = networkRange;
+        document.getElementById('current-mask').textContent = calculateSubnetMask(cidr);
+        document.getElementById('current-addresses').textContent = Math.pow(2, 32 - cidr) - 2;
+    }
+    
+    function calculateSubnetMask(cidr) {
+        const mask = (0xffffffff >> (32 - cidr)) << (32 - cidr);
+        return [
+            (mask >> 24) & 0xff,
+            (mask >> 16) & 0xff,
+            (mask >> 8) & 0xff,
+            mask & 0xff
+        ].join('.');
+    }
+    
+    // Mise à jour du temps jusqu'au prochain scan
+    function updateNextScan() {
+        const interval = parseInt(document.getElementById('scan-interval').value);
+        const nextScan = new Date(Date.now() + interval * 60 * 1000);
+        const minutes = Math.floor((nextScan - Date.now()) / (1000 * 60));
+        
+        if (minutes > 60) {
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            document.getElementById('next-scan').textContent = `${hours}h ${remainingMinutes}min`;
+        } else {
+            document.getElementById('next-scan').textContent = `${minutes} min`;
+        }
+    }
+    
+    // Mettre à jour toutes les minutes
+    setInterval(updateNextScan, 60000);
+    updateNextScan();
+});
+</script>
+{% endblock %} 

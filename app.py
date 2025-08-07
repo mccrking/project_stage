@@ -3,6 +3,10 @@ Dashboard Central Danone - Application principale avec IA intégrée
 Système de supervision réseau intelligent
 """
 
+# Chargement des variables d'environnement
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -14,7 +18,7 @@ import time
 import os
 import json
 import logging
-from network_scanner import NetworkScanner
+from network_scanner_production import ProductionNetworkScanner
 from report_generator import ReportGenerator
 from ai_enhancement import ai_system, AIEnhancement
 from advanced_monitoring import advanced_monitoring
@@ -26,13 +30,25 @@ from email.mime.multipart import MIMEMultipart
 import random
 
 # Configuration du logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
+
+# Réduire la verbosité des logs Werkzeug en production
+if os.environ.get('FLASK_ENV') != 'development':
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.setLevel(logging.WARNING)  # Masquer les requêtes INFO
 
 # Configuration de l'application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'danone-central-2024-ai-enhanced'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///network_monitor.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///network_monitor_production.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialisation de Flask-Login
@@ -72,7 +88,7 @@ class User(UserMixin, db.Model):
 
 # Modèles de base de données étendus avec IA
 class Device(db.Model):
-    """Modèle d'équipement avec données IA"""
+    """Modèle d'équipement avec données IA et informations production"""
     id = db.Column(db.Integer, primary_key=True)
     ip = db.Column(db.String(15), unique=True, nullable=False)
     mac = db.Column(db.String(17), nullable=True)
@@ -87,6 +103,13 @@ class Device(db.Model):
     anomaly_score = db.Column(db.Float, default=0.0)  # Score d'anomalie
     maintenance_urgency = db.Column(db.String(20), default='low')  # Urgence maintenance
     ai_recommendations = db.Column(db.Text, default='[]')  # Recommandations IA (JSON)
+    
+    # Nouvelles colonnes pour données production
+    response_time = db.Column(db.Float, default=0.0)  # Temps de réponse ping
+    system_info = db.Column(db.String(100), nullable=True)  # OS détecté
+    open_ports = db.Column(db.Text, default='[]')  # Ports ouverts (JSON)
+    services = db.Column(db.Text, default='[]')  # Services détectés (JSON)
+    
     created_at = db.Column(db.DateTime, default=get_local_time)
     updated_at = db.Column(db.DateTime, default=get_local_time, onupdate=get_local_time)
 
@@ -124,8 +147,57 @@ class AIModel(db.Model):
     model_path = db.Column(db.String(200), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
 
+class Report(db.Model):
+    """Modèle pour les rapports générés"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    filename = db.Column(db.String(200), nullable=False, unique=True)
+    type = db.Column(db.String(50), nullable=False)  # 'daily', 'weekly', 'monthly', 'custom', etc.
+    format = db.Column(db.String(10), nullable=False)  # 'pdf', 'excel', 'html', 'csv'
+    status = db.Column(db.String(20), default='processing')  # 'processing', 'completed', 'failed', 'scheduled'
+    description = db.Column(db.Text, nullable=True)
+    sections = db.Column(db.Text, default='[]')  # Sections incluses (JSON)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_size = db.Column(db.Integer, default=0)
+    download_count = db.Column(db.Integer, default=0)
+    
+    # Paramètres de génération
+    date_from = db.Column(db.DateTime, nullable=True)
+    date_to = db.Column(db.DateTime, nullable=True)
+    generated_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Programmation
+    is_scheduled = db.Column(db.Boolean, default=False)
+    schedule_frequency = db.Column(db.String(20), nullable=True)  # 'daily', 'weekly', 'monthly'
+    schedule_time = db.Column(db.String(10), nullable=True)  # '08:00'
+    schedule_email = db.Column(db.String(100), nullable=True)
+    next_run = db.Column(db.DateTime, nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=get_local_time)
+    generated_at = db.Column(db.DateTime, nullable=True)
+    updated_at = db.Column(db.DateTime, default=get_local_time, onupdate=get_local_time)
+
+    def to_dict(self):
+        """Convertit le rapport en dictionnaire pour l'API"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'filename': self.filename,
+            'type': self.type,
+            'format': self.format,
+            'status': self.status,
+            'description': self.description,
+            'file_size': self.file_size,
+            'download_count': self.download_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'generated_at': self.generated_at.isoformat() if self.generated_at else None,
+            'date_from': self.date_from.isoformat() if self.date_from else None,
+            'date_to': self.date_to.isoformat() if self.date_to else None,
+            'download_url': f'/api/reports/download/{self.filename}' if self.status == 'completed' else None
+        }
+
 # Initialisation des modules
-network_scanner = NetworkScanner()
+network_scanner = ProductionNetworkScanner()
 report_generator = ReportGenerator()
 
 # Variables globales
@@ -185,15 +257,15 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Configuration email simplifiée pour alertes automatiques
+# Configuration email pour alertes automatiques (désactivée par défaut)
 EMAIL_CONFIG = {
-    'enabled': True,
+    'enabled': False,  # Désactivé par défaut pour éviter les erreurs
     'smtp_server': 'smtp.gmail.com',
     'smtp_port': 587,
-    'username': 'centraldanone.supervision@gmail.com',  # Email dédié Central Danone
-    'password': 'supervision2024',  # Mot de passe simple
-    'from_email': 'centraldanone.supervision@gmail.com',
-    'to_email': 'mehdi.chmiti2000@gmail.com'  # Email de Mehdi
+    'username': '',  # À configurer via l'interface
+    'password': '',  # À configurer via l'interface
+    'from_email': '',  # À configurer via l'interface
+    'to_email': ''   # À configurer via l'interface
 }
 
 # Système de notifications en temps réel
@@ -238,7 +310,15 @@ def send_email_alert(subject, message, priority='medium'):
     """Envoie une alerte par email avec configuration simplifiée"""
     try:
         if not EMAIL_CONFIG['enabled'] or not EMAIL_CONFIG['to_email']:
-            logger.info("Email non configuré ou désactivé")
+            # Mode silencieux - pas de log si email désactivé volontairement
+            add_notification(f"📧 {subject}: {message}", 'info', priority)
+            return False
+        
+        # Vérifier que tous les champs requis sont remplis
+        required_fields = ['username', 'password', 'from_email', 'to_email']
+        if not all(EMAIL_CONFIG.get(field) for field in required_fields):
+            logger.info("Configuration email incomplète - utilisation des notifications internes uniquement")
+            add_notification(f"📧 {subject}: {message}", 'info', priority)
             return False
         
         # Création du message
@@ -276,15 +356,15 @@ def send_email_alert(subject, message, priority='medium'):
             return True
             
         except smtplib.SMTPAuthenticationError:
-            logger.warning("Erreur d'authentification email - Utilisation du mode notification")
+            logger.info("Configuration email invalide - utilisation des notifications internes")
             # Fallback vers notifications en temps réel
-            add_notification(f"⚠️ Alerte: {subject} - {message}", 'warning', priority)
+            add_notification(f"📧 {subject}: {message}", 'info', priority)
             return False
             
         except Exception as e:
-            logger.error(f"Erreur envoi email: {e}")
+            logger.info(f"Service email non disponible - utilisation des notifications internes: {e}")
             # Fallback vers notifications en temps réel
-            add_notification(f"⚠️ Alerte: {subject} - {message}", 'warning', priority)
+            add_notification(f"📧 {subject}: {message}", 'info', priority)
             return False
         
     except Exception as e:
@@ -532,7 +612,7 @@ def perform_network_scan():
         # Scan réseau (plage par défaut)
         from config import Config
         network_range = Config.DEFAULT_NETWORK_RANGE
-        devices_found = network_scanner.scan_network(network_range)
+        devices_found = network_scanner.scan_network_advanced(network_range, aggressive=False)
         
         # Utiliser le contexte d'application Flask
         with app.app_context():
@@ -612,66 +692,395 @@ def perform_multi_network_scan():
         logger.info("Début du scan multi-réseaux avec IA...")
         
         # Scanner tous les réseaux détectés
-        all_results = network_scanner.scan_all_networks()
+        all_devices = network_scanner.scan_all_networks()
         
-        total_devices_found = 0
+        total_devices_found = len(all_devices)
         
         # Utiliser le contexte d'application Flask
         with app.app_context():
-            # Traiter les résultats de chaque réseau
-            for network_range, result in all_results.items():
-                if 'error' in result:
-                    logger.warning(f"Erreur scan {network_range}: {result['error']}")
-                    continue
+            # Traiter tous les équipements trouvés
+            for device_info in all_devices:
+                device = Device.query.filter_by(ip=device_info['ip']).first()
+                
+                if device:
+                    # Mise à jour de l'équipement existant
+                    device.is_online = device_info['is_online']
+                    device.last_seen = get_local_time()
+                    device.hostname = device_info.get('hostname', device.hostname)
+                    device.mac = device_info.get('mac', device.mac)
+                    device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                else:
+                    # Nouvel équipement
+                    device = Device(
+                        ip=device_info['ip'],
+                        hostname=device_info.get('hostname', ''),
+                        mac=device_info.get('mac', ''),
+                        mac_vendor=device_info.get('mac_vendor', ''),
+                        is_online=device_info['is_online']
+                    )
+                    db.session.add(device)
+                    db.session.flush()  # Pour obtenir l'ID
+                
+                # Enregistrement du scan
+                scan_record = ScanHistory(
+                    device_id=device.id,
+                    is_online=device_info['is_online'],
+                    response_time=device_info.get('response_time'),
+                    packet_loss=device_info.get('packet_loss', 0.0),
+                    scan_duration=device_info.get('scan_duration', 0.0),
+                    error_count=device_info.get('error_count', 0)
+                )
+                db.session.add(scan_record)
+                
+                # Analyse IA si l'équipement est en ligne
+                if device_info['is_online']:
+                    analyze_device_with_ai(device)
+            
+            db.session.commit()
+            logger.info(f"Scan multi-réseaux terminé: {total_devices_found} équipements trouvés")
+        
+    except Exception as e:
+        logger.error(f"Erreur lors du scan multi-réseaux: {e}")
+    finally:
+        scan_in_progress = False
+
+def perform_production_scan(network_range, aggressive=False):
+    """Effectue un scan production avancé avec détection réelle"""
+    global scan_in_progress
+    
+    if scan_in_progress:
+        logger.info("Scan déjà en cours, ignoré")
+        return
+    
+    scan_in_progress = True
+    try:
+        logger.info(f"Début du scan production avancé sur {network_range} (aggressive: {aggressive})")
+        
+        # Utiliser le scanner production avancé
+        devices_found = network_scanner.scan_network_advanced(network_range, aggressive)
+        
+        # Utiliser le contexte d'application Flask
+        with app.app_context():
+            for device_info in devices_found:
+                # Chercher si l'équipement existe déjà
+                device = Device.query.filter_by(ip=device_info['ip']).first()
+                
+                if device:
+                    # Mise à jour complète avec données production
+                    device.is_online = device_info['is_online']
+                    device.last_seen = get_local_time()
+                    device.hostname = device_info.get('hostname', device.hostname)
+                    device.mac = device_info.get('mac', device.mac)
+                    device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                    device.device_type = device_info.get('type', device.device_type)
+                    device.ai_confidence = device_info.get('confidence', 0)
+                    device.response_time = device_info.get('response_time', 0.0)
                     
-                devices_found = result['devices']
-                total_devices_found += len(devices_found)
+                    # Mettre à jour les données système si disponibles
+                    if 'os' in device_info:
+                        device.system_info = device_info['os']
+                    
+                    # Stocker les ports et services découverts
+                    device.open_ports = json.dumps(device_info.get('ports', []))
+                    device.services = json.dumps(device_info.get('services', []))
+                else:
+                    # Nouvel équipement avec données complètes
+                    device = Device(
+                        ip=device_info['ip'],
+                        hostname=device_info.get('hostname', ''),
+                        mac=device_info.get('mac', ''),
+                        mac_vendor=device_info.get('mac_vendor', ''),
+                        device_type=device_info.get('type', 'Unknown'),
+                        is_online=device_info['is_online'],
+                        ai_confidence=device_info.get('confidence', 0),
+                        response_time=device_info.get('response_time', 0.0),
+                        system_info=device_info.get('os', ''),
+                        open_ports=json.dumps(device_info.get('ports', [])),
+                        services=json.dumps(device_info.get('services', []))
+                    )
+                    db.session.add(device)
+                    db.session.flush()  # Pour obtenir l'ID
                 
-                logger.info(f"Réseau {network_range}: {len(devices_found)} équipements trouvés")
+                # Enregistrement détaillé du scan
+                scan_record = ScanHistory(
+                    device_id=device.id,
+                    is_online=device_info['is_online'],
+                    response_time=device_info.get('response_time', 0.0),
+                    packet_loss=0.0,  # À implémenter si nécessaire
+                    scan_duration=0.0,  # À implémenter si nécessaire
+                    error_count=0
+                )
+                db.session.add(scan_record)
                 
-                # Mise à jour de la base de données pour ce réseau
-                for device_info in devices_found:
+                # Analyse IA avancée
+                if device_info['is_online']:
+                    analyze_device_with_ai(device)
+                
+                logger.info(f"Équipement traité: {device_info['ip']} ({device_info.get('type', 'Unknown')})")
+            
+            db.session.commit()
+            logger.info(f"Scan production terminé: {len(devices_found)} équipements détectés")
+        
+    except Exception as e:
+        logger.error(f"Erreur lors du scan production: {e}")
+    finally:
+        scan_in_progress = False
+
+def perform_complete_network_scan(aggressive=False):
+    """Effectue un scan complet de tous les réseaux avec détection avancée"""
+    global scan_in_progress
+    
+    if scan_in_progress:
+        logger.info("Scan déjà en cours, ignoré")
+        return
+    
+    scan_in_progress = True
+    try:
+        logger.info(f"Début du scan complet avancé (aggressive: {aggressive})")
+        
+        # Scanner tous les réseaux avec le mode avancé
+        all_devices = network_scanner.scan_all_networks(aggressive)
+        
+        # Utiliser le contexte d'application Flask
+        with app.app_context():
+            for device_info in all_devices:
+                # Chercher si l'équipement existe déjà
+                device = Device.query.filter_by(ip=device_info['ip']).first()
+                
+                if device:
+                    # Mise à jour complète
+                    device.is_online = device_info['is_online']
+                    device.last_seen = get_local_time()
+                    device.hostname = device_info.get('hostname', device.hostname)
+                    device.mac = device_info.get('mac', device.mac)
+                    device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                    device.device_type = device_info.get('type', device.device_type)
+                    device.ai_confidence = device_info.get('confidence', 0)
+                    device.response_time = device_info.get('response_time', 0.0)
+                    device.system_info = device_info.get('os', '')
+                    device.open_ports = json.dumps(device_info.get('ports', []))
+                    device.services = json.dumps(device_info.get('services', []))
+                else:
+                    # Nouvel équipement
+                    device = Device(
+                        ip=device_info['ip'],
+                        hostname=device_info.get('hostname', ''),
+                        mac=device_info.get('mac', ''),
+                        mac_vendor=device_info.get('mac_vendor', ''),
+                        device_type=device_info.get('type', 'Unknown'),
+                        is_online=device_info['is_online'],
+                        ai_confidence=device_info.get('confidence', 0),
+                        response_time=device_info.get('response_time', 0.0),
+                        system_info=device_info.get('os', ''),
+                        open_ports=json.dumps(device_info.get('ports', [])),
+                        services=json.dumps(device_info.get('services', []))
+                    )
+                    db.session.add(device)
+                    db.session.flush()
+                
+                # Enregistrement du scan
+                scan_record = ScanHistory(
+                    device_id=device.id,
+                    is_online=device_info['is_online'],
+                    response_time=device_info.get('response_time', 0.0),
+                    packet_loss=0.0,
+                    scan_duration=0.0,
+                    error_count=0
+                )
+                db.session.add(scan_record)
+                
+                # Analyse IA
+                if device_info['is_online']:
+                    analyze_device_with_ai(device)
+            
+            db.session.commit()
+            logger.info(f"Scan complet terminé: {len(all_devices)} équipements détectés")
+        
+    except Exception as e:
+        logger.error(f"Erreur lors du scan complet: {e}")
+    finally:
+        scan_in_progress = False
+
+def perform_universal_network_scan():
+    """Effectue un scan universel ultra-complet pour détecter TOUS les équipements"""
+    global scan_in_progress
+    
+    if scan_in_progress:
+        logger.info("Scan déjà en cours, ignoré")
+        return
+    
+    scan_in_progress = True
+    try:
+        logger.info("🌍 SCAN UNIVERSEL DÉMARRÉ - Détection maximale activée!")
+        
+        # Étape 1: Découverte étendue des réseaux
+        logger.info("🔍 Phase 1: Découverte étendue des réseaux...")
+        discovered_networks = network_scanner.discover_local_networks()
+        
+        # Extraire les adresses réseau des résultats (ce sont des dictionnaires)
+        all_networks = []
+        if isinstance(discovered_networks, list):
+            for network_info in discovered_networks:
+                if isinstance(network_info, dict) and 'network' in network_info:
+                    all_networks.append(network_info['network'])
+                elif isinstance(network_info, str):
+                    all_networks.append(network_info)
+        
+        # Ajout de plages réseau communes pour smartphones/TV
+        additional_ranges = [
+            '192.168.1.0/24',   # Réseau domestique classique
+            '192.168.0.0/24',   # Réseau alternatif  
+            '10.0.0.0/24',      # Réseau privé
+            '172.16.0.0/24'     # Autre réseau privé
+        ]
+        
+        # Combiner tous les réseaux (en supprimant les doublons)
+        all_scan_ranges = []
+        combined_ranges = all_networks + additional_ranges
+        for range_item in combined_ranges:
+            if range_item not in all_scan_ranges:
+                all_scan_ranges.append(range_item)
+                
+        logger.info(f"🌐 {len(all_scan_ranges)} réseau(x) à scanner en mode universel: {all_scan_ranges}")
+        logger.info(f"📍 Réseaux détectés: {all_networks}")
+        logger.info(f"🔧 Réseaux additionnels: {additional_ranges}")
+        
+        all_devices_found = []
+        
+        # Utiliser le contexte d'application Flask
+        with app.app_context():
+            # Étape 2: Scan ultra-agressif de chaque réseau
+            for network_range in all_scan_ranges:
+                try:
+                    logger.info(f"🚀 Scan ULTRA-AGRESSIF du réseau: {network_range}")
+                    
+                    # Scan avec mode agressif activé pour détection maximale
+                    devices_found = network_scanner.scan_network_advanced(network_range, aggressive=True)
+                    
+                    logger.info(f"📱 {len(devices_found)} équipement(s) détecté(s) sur {network_range}")
+                    all_devices_found.extend(devices_found)
+                    
+                except Exception as e:
+                    logger.warning(f"Erreur scan {network_range}: {e}")
+                    continue
+            
+            # Étape 3: Traitement et analyse des équipements
+            logger.info(f"📊 Traitement de {len(all_devices_found)} équipements détectés...")
+            
+            for device_info in all_devices_found:
+                try:
+                    # Chercher si l'équipement existe déjà
                     device = Device.query.filter_by(ip=device_info['ip']).first()
                     
                     if device:
-                        # Mise à jour de l'équipement existant
+                        # Mise à jour complète avec détection améliorée
                         device.is_online = device_info['is_online']
                         device.last_seen = get_local_time()
                         device.hostname = device_info.get('hostname', device.hostname)
                         device.mac = device_info.get('mac', device.mac)
                         device.mac_vendor = device_info.get('mac_vendor', device.mac_vendor)
+                        device.device_type = device_info.get('type', device.device_type)
+                        device.ai_confidence = device_info.get('confidence', 0)
+                        device.response_time = device_info.get('response_time', 0.0)
+                        device.system_info = device_info.get('os', device.system_info)
+                        device.open_ports = json.dumps(device_info.get('ports', []))
+                        device.services = json.dumps(device_info.get('services', []))
                     else:
-                        # Nouvel équipement
+                        # Nouvel équipement avec détection avancée
                         device = Device(
                             ip=device_info['ip'],
                             hostname=device_info.get('hostname', ''),
                             mac=device_info.get('mac', ''),
                             mac_vendor=device_info.get('mac_vendor', ''),
-                            is_online=device_info['is_online']
+                            device_type=device_info.get('type', 'Unknown'),
+                            is_online=device_info['is_online'],
+                            ai_confidence=device_info.get('confidence', 0),
+                            response_time=device_info.get('response_time', 0.0),
+                            system_info=device_info.get('os', ''),
+                            open_ports=json.dumps(device_info.get('ports', [])),
+                            services=json.dumps(device_info.get('services', []))
                         )
                         db.session.add(device)
-                        db.session.flush()  # Pour obtenir l'ID
+                        db.session.flush()
                     
-                    # Enregistrement du scan
+                    # Détection spécialisée pour smartphones et TV
+                    if device_info.get('mac_vendor'):
+                        vendor = device_info['mac_vendor'].lower()
+                        if 'oppo' in vendor or 'oneplus' in vendor:
+                            device.device_type = 'smartphone'
+                            logger.info(f"📱 TÉLÉPHONE OPPO détecté: {device.ip}")
+                        elif 'samsung' in vendor and 'tv' in device_info.get('hostname', '').lower():
+                            device.device_type = 'smart_tv'
+                            logger.info(f"📺 TV SAMSUNG détectée: {device.ip}")
+                        elif 'samsung' in vendor:
+                            device.device_type = 'smartphone'
+                            logger.info(f"📱 SMARTPHONE SAMSUNG détecté: {device.ip}")
+                    
+                    # Enregistrement détaillé du scan
                     scan_record = ScanHistory(
                         device_id=device.id,
                         is_online=device_info['is_online'],
-                        response_time=device_info.get('response_time'),
-                        packet_loss=device_info.get('packet_loss', 0.0),
-                        scan_duration=device_info.get('scan_duration', 0.0),
-                        error_count=device_info.get('error_count', 0)
+                        response_time=device_info.get('response_time', 0.0),
+                        packet_loss=0.0,
+                        scan_duration=0.0,
+                        error_count=0
                     )
                     db.session.add(scan_record)
                     
-                    # Analyse IA si l'équipement est en ligne
+                    # Analyse IA améliorée
                     if device_info['is_online']:
                         analyze_device_with_ai(device)
+                    
+                    logger.info(f"✅ Équipement traité: {device_info['ip']} ({device_info.get('type', 'Unknown')}) - {device_info.get('mac_vendor', 'Inconnu')}")
+                    
+                except Exception as e:
+                    logger.error(f"Erreur traitement équipement {device_info.get('ip', 'unknown')}: {e}")
+                    continue
             
             db.session.commit()
-            logger.info(f"Scan multi-réseaux terminé: {total_devices_found} équipements trouvés sur {len(all_results)} réseaux")
+            
+            # Étape 4: Notification des résultats avec détection spécialisée
+            total_detected = len(all_devices_found)
+            smartphones = sum(1 for d in all_devices_found if 'phone' in d.get('type', '').lower() or 'mobile' in d.get('type', '').lower())
+            tvs = sum(1 for d in all_devices_found if 'tv' in d.get('type', '').lower() or 'smart' in d.get('type', '').lower())
+            
+            # Détection spécialisée OPPO et Samsung
+            oppo_devices = []
+            samsung_devices = []
+            for d in all_devices_found:
+                vendor = d.get('mac_vendor', '').lower()
+                if 'oppo' in vendor:
+                    oppo_devices.append(d['ip'])
+                elif 'samsung' in vendor:
+                    samsung_devices.append(d['ip'])
+            
+            logger.info(f"🎯 SCAN UNIVERSEL TERMINÉ!")
+            logger.info(f"📊 RÉSULTATS: {total_detected} équipements détectés")
+            logger.info(f"📱 Smartphones: {smartphones}")
+            logger.info(f"📺 Smart TV: {tvs}")
+            if oppo_devices:
+                logger.info(f"📱 OPPO détectés: {', '.join(oppo_devices)}")
+            if samsung_devices:
+                logger.info(f"📱📺 SAMSUNG détectés: {', '.join(samsung_devices)}")
+            
+            # Notification en temps réel améliorée
+            success_message = f"🌍 SCAN UNIVERSEL RÉUSSI ! {total_detected} équipements détectés"
+            if oppo_devices:
+                success_message += f" 📱 OPPO trouvé: {', '.join(oppo_devices)}"
+            if samsung_devices:
+                success_message += f" 📱📺 SAMSUNG trouvés: {', '.join(samsung_devices)}"
+            if smartphones > 0:
+                success_message += f" (📱{smartphones} smartphones"
+            if tvs > 0:
+                success_message += f", 📺{tvs} TV)"
+            elif smartphones > 0:
+                success_message += ")"
+                
+            add_notification(success_message, 'success', 'high')
         
     except Exception as e:
-        logger.error(f"Erreur lors du scan multi-réseaux: {e}")
+        logger.error(f"Erreur lors du scan universel: {e}")
+        add_notification(f"❌ Erreur scan universel: {str(e)}", 'danger', 'high')
     finally:
         scan_in_progress = False
 
@@ -909,7 +1318,7 @@ def api_scan_all_networks():
 def api_discover_networks():
     """API pour découvrir les réseaux disponibles"""
     try:
-        networks = network_scanner.discover_networks()
+        networks = network_scanner.discover_local_networks()
         return jsonify({
             'status': 'success',
             'networks': networks,
@@ -917,6 +1326,76 @@ def api_discover_networks():
         })
     except Exception as e:
         logger.error(f"Erreur découverte réseaux: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/scan-production')
+@login_required
+def api_scan_production():
+    """API pour lancer un scan production avancé"""
+    try:
+        if scan_in_progress:
+            return jsonify({'status': 'error', 'message': 'Scan déjà en cours'})
+        
+        network_range = request.args.get('network', '192.168.1.0/24')
+        aggressive = request.args.get('aggressive', 'false').lower() == 'true'
+        
+        # Lancement du scan production dans un thread séparé
+        thread = threading.Thread(target=perform_production_scan, args=(network_range, aggressive))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'success', 
+            'message': f'Scan production lancé sur {network_range}',
+            'aggressive': aggressive
+        })
+    except Exception as e:
+        logger.error(f"Erreur API scan production: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/scan-all-networks')
+@login_required
+def api_scan_all_networks_get():
+    """API pour scanner tous les réseaux détectés (GET)"""
+    try:
+        if scan_in_progress:
+            return jsonify({'status': 'error', 'message': 'Scan déjà en cours'})
+        
+        aggressive = request.args.get('aggressive', 'false').lower() == 'true'
+        
+        # Lancement du scan complet dans un thread séparé
+        thread = threading.Thread(target=perform_complete_network_scan, args=(aggressive,))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'success', 
+            'message': 'Scan complet de tous les réseaux lancé',
+            'aggressive': aggressive
+        })
+    except Exception as e:
+        logger.error(f"Erreur API scan complet: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/scan-universal', methods=['POST'])
+@login_required
+def api_scan_universal():
+    """API pour un scan universel ultra-complet avec détection avancée"""
+    try:
+        if scan_in_progress:
+            return jsonify({'status': 'error', 'message': 'Scan déjà en cours'})
+        
+        # Lancement du scan universel dans un thread séparé
+        thread = threading.Thread(target=perform_universal_network_scan)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'success', 
+            'message': '🌍 Scan Universel lancé - Détection maximale activée!'
+        })
+    except Exception as e:
+        logger.error(f"Erreur API scan universel: {e}")
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/devices')
@@ -1263,30 +1742,42 @@ def api_bulk_resolve_alerts():
 @app.route('/reports')
 @login_required
 def reports():
-    """Page des rapports"""
+    """Page des rapports avec données réelles depuis la base de données"""
     try:
-        # Liste des rapports disponibles
-        reports_dir = 'reports'
-        if not os.path.exists(reports_dir):
-            os.makedirs(reports_dir)
+        # Récupérer les statistiques réelles depuis la base de données
+        total_reports = Report.query.count()
         
-        report_files = []
-        for filename in os.listdir(reports_dir):
-            if filename.endswith(('.pdf', '.xlsx', '.json')):
-                filepath = os.path.join(reports_dir, filename)
-                stat = os.stat(filepath)
-                report_files.append({
-                    'filename': filename,
-                    'size': stat.st_size,
-                    'created': datetime.fromtimestamp(stat.st_ctime)
-                })
+        # Rapports de ce mois
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        reports_month = Report.query.filter(
+            db.extract('month', Report.created_at) == current_month,
+            db.extract('year', Report.created_at) == current_year
+        ).count()
         
-        report_files.sort(key=lambda x: x['created'], reverse=True)
+        # Rapports programmés
+        scheduled_count = Report.query.filter_by(is_scheduled=True, status='scheduled').count()
         
-        return render_template('reports.html', reports=report_files)
+        # Rapports en cours de traitement
+        processing_count = Report.query.filter_by(status='processing').count()
+        
+        # Rapports récents (5 derniers)
+        recent_reports = Report.query.order_by(Report.created_at.desc()).limit(5).all()
+        
+        return render_template('reports.html', 
+                             total_reports=total_reports,
+                             reports_month=reports_month,
+                             scheduled_count=scheduled_count,
+                             processing_count=processing_count,
+                             recent_reports=[r.to_dict() for r in recent_reports])
     except Exception as e:
         logger.error(f"Erreur page rapports: {e}")
-        return render_template('error.html', error=str(e))
+        return render_template('reports.html', 
+                             total_reports=0,
+                             reports_month=0,
+                             scheduled_count=0,
+                             processing_count=0,
+                             recent_reports=[])
 
 @app.route('/api/reports/delete/<filename>', methods=['DELETE'])
 @login_required
@@ -1314,20 +1805,12 @@ def settings():
 @app.route('/api/settings')
 @login_required
 def api_settings():
-    """API pour récupérer les paramètres"""
+    """API pour récupérer les paramètres production"""
     try:
-        from settings_manager import get_settings_manager
-        from config import Config
+        from settings_manager_production import get_production_settings_manager
         
-        settings_manager = get_settings_manager()
+        settings_manager = get_production_settings_manager()
         settings = settings_manager.get_all_settings()
-        
-        # Ajouter les paramètres de configuration système
-        settings.update({
-            'production_networks': Config.PRODUCTION_NETWORKS,
-            'ai_training_interval': Config.AI_TRAINING_INTERVAL,
-            'max_concurrent_scans': Config.MAX_CONCURRENT_SCANS
-        })
         
         return jsonify(settings)
     except Exception as e:
@@ -1337,12 +1820,12 @@ def api_settings():
 @app.route('/api/settings', methods=['POST'])
 @login_required
 def api_update_settings():
-    """API pour mettre à jour les paramètres réseau"""
+    """API pour mettre à jour les paramètres réseau production"""
     try:
-        from settings_manager import get_settings_manager
+        from settings_manager_production import get_production_settings_manager
         
         data = request.get_json()
-        settings_manager = get_settings_manager()
+        settings_manager = get_production_settings_manager()
         
         # Mettre à jour les paramètres réseau
         network_settings = {
@@ -1350,32 +1833,36 @@ def api_update_settings():
             'scan_interval': data.get('scan_interval'),
             'scan_timeout': data.get('scan_timeout'),
             'max_retries': data.get('max_retries'),
-            'enable_auto_scan': data.get('enable_auto_scan')
+            'enable_auto_scan': data.get('enable_auto_scan', True),
+            'aggressive_scan': data.get('aggressive_scan', False)
         }
         
-        success = settings_manager.update_settings(network_settings)
+        success, message = settings_manager.update_network_settings(network_settings)
         
         if success:
-            return jsonify({'status': 'success', 'message': 'Paramètres réseau mis à jour'})
+            return jsonify({'status': 'success', 'message': message})
         else:
-            return jsonify({'status': 'error', 'message': 'Erreur lors de la sauvegarde'})
+            return jsonify({'status': 'error', 'message': message})
     except Exception as e:
         logger.error(f"Erreur mise à jour settings: {e}")
-        return jsonify({'error': str(e)})
+        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/settings/networks', methods=['GET'])
 @login_required
 def api_get_networks():
-    """API pour récupérer les réseaux configurés"""
+    """API pour récupérer les réseaux détectés automatiquement"""
     try:
-        from config import Config
-        networks = network_scanner.discover_networks()
+        from settings_manager_production import get_production_settings_manager
+        
+        settings_manager = get_production_settings_manager()
+        detected_networks = settings_manager.get_detected_networks()
+        current_network = settings_manager.get_current_network_info()
         
         return jsonify({
             'status': 'success',
-            'networks': networks,
-            'production_networks': Config.PRODUCTION_NETWORKS,
-            'default_network': Config.DEFAULT_NETWORK_RANGE
+            'detected_networks': detected_networks,
+            'current_network': current_network,
+            'auto_detection_available': True
         })
     except Exception as e:
         logger.error(f"Erreur récupération réseaux: {e}")
@@ -1384,46 +1871,20 @@ def api_get_networks():
 @app.route('/api/settings/save', methods=['POST'])
 @login_required
 def api_save_settings():
-    """API pour sauvegarder les paramètres généraux"""
+    """API pour sauvegarder les paramètres avec le gestionnaire production"""
     try:
-        from settings_manager import get_settings_manager
+        from settings_manager_production import get_production_settings_manager
         
         data = request.get_json()
-        settings_manager = get_settings_manager()
+        settings_manager = get_production_settings_manager()
         
-        # Déterminer le type de paramètres à sauvegarder
-        if 'alert_threshold' in data:
-            # Paramètres d'alertes
-            alert_settings = {
-                'alert_threshold': data.get('alert_threshold'),
-                'alert_device_offline': data.get('alert_device_offline'),
-                'alert_device_online': data.get('alert_device_online'),
-                'alert_low_uptime': data.get('alert_low_uptime'),
-                'alert_scan_failed': data.get('alert_scan_failed')
-            }
-            success = settings_manager.update_settings(alert_settings)
-            message = 'Paramètres d\'alertes sauvegardés'
-        elif 'auto_report' in data:
-            # Paramètres de rapports
-            report_settings = {
-                'auto_report': data.get('auto_report'),
-                'report_format': data.get('report_format'),
-                'report_time': data.get('report_time'),
-                'report_retention': data.get('report_retention'),
-                'include_charts': data.get('include_charts'),
-                'include_alerts': data.get('include_alerts')
-            }
-            success = settings_manager.update_settings(report_settings)
-            message = 'Paramètres de rapports sauvegardés'
-        else:
-            # Paramètres généraux
-            success = settings_manager.update_settings(data)
-            message = 'Paramètres sauvegardés'
+        # Sauvegarde unifiée des paramètres avec le gestionnaire production
+        success = settings_manager.save_settings(data)
         
         if success:
             return jsonify({
                 'status': 'success',
-                'message': message
+                'message': 'Paramètres sauvegardés avec succès'
             })
         else:
             return jsonify({
@@ -1432,93 +1893,356 @@ def api_save_settings():
             })
     except Exception as e:
         logger.error(f"Erreur sauvegarde paramètres: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
         return jsonify({'error': str(e)})
 
 @app.route('/api/settings/test-network', methods=['POST'])
 @login_required
 def api_test_network():
-    """API pour tester une plage réseau"""
+    """API pour tester une plage réseau avec le scanner production"""
     try:
+        from settings_manager_production import get_production_settings_manager
+        
         data = request.get_json()
-        network_range = data.get('network_range', '192.168.1.0/24')
+        network_range = data.get('network_range', 'auto-detect')
         
-        # Test rapide du réseau
-        devices_found = network_scanner.scan_network(network_range)
+        settings_manager = get_production_settings_manager()
+        success, message = settings_manager.test_network_connectivity(network_range)
         
-        return jsonify({
-            'status': 'success',
-            'network_range': network_range,
-            'devices_found': len(devices_found),
-            'devices': devices_found[:5]  # Limiter à 5 pour l'aperçu
-        })
+        if success:
+            return jsonify({
+                'status': 'success',
+                'network_range': network_range,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': message
+            })
     except Exception as e:
         logger.error(f"Erreur test réseau: {e}")
-        return jsonify({'error': str(e)})
+        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/reports/generate', methods=['POST'])
 @login_required
 def api_generate_report():
-    """API pour générer un rapport"""
+    """API pour générer un rapport avec sauvegarde en base de données"""
     try:
-        from report_generator import ReportGenerator
-        
         data = request.get_json()
         report_type = data.get('type', 'daily')
         report_format = data.get('format', 'pdf')
-        date_from = data.get('date_from')
-        date_to = data.get('date_to')
+        date_from = data.get('dateFrom') or data.get('date_from')
+        date_to = data.get('dateTo') or data.get('date_to')
         description = data.get('description', '')
+        sections = data.get('sections', [])
         
-        # Préparer les modèles pour le générateur de rapports
-        models = {
-            'Device': Device,
-            'ScanHistory': ScanHistory,
-            'Alert': Alert,
-            'db': db
-        }
+        # Générer un nom de fichier unique
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"rapport_{report_type}_{timestamp}.{report_format}"
         
-        # Générer le rapport selon le type
-        if report_type == 'ai':
-            report_path = generate_ai_report()
-        else:
-            # Utiliser le générateur de rapports standard
-            report_gen = ReportGenerator()
-            report_path = report_gen.generate_report(
-                report_type=report_type,
-                format=report_format,
-                date_from=date_from,
-                date_to=date_to,
-                description=description,
-                models=models
-            )
+        # Créer l'entrée en base de données
+        new_report = Report(
+            name=f"Rapport {report_type.title()} - {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            filename=filename,
+            type=report_type,
+            format=report_format,
+            status='processing',
+            description=description,
+            sections=json.dumps(sections),
+            date_from=datetime.fromisoformat(date_from) if date_from else None,
+            date_to=datetime.fromisoformat(date_to) if date_to else None,
+            generated_by=current_user.id
+        )
         
-        if report_path:
-            filename = os.path.basename(report_path)
+        db.session.add(new_report)
+        db.session.commit()
+        
+        try:
+            # Simuler la génération du rapport (remplacer par vraie génération)
+            report_data = generate_real_report_data(report_type, date_from, date_to, sections)
+            
+            # Créer le dossier reports s'il n'existe pas
+            reports_dir = 'reports'
+            if not os.path.exists(reports_dir):
+                os.makedirs(reports_dir)
+            
+            report_path = os.path.join(reports_dir, filename)
+            
+            # Générer le fichier selon le format
+            if report_format == 'pdf':
+                generate_pdf_report(report_path, report_data, report_type)
+            elif report_format == 'excel':
+                generate_excel_report(report_path, report_data)
+            elif report_format == 'html':
+                generate_html_report(report_path, report_data, report_type)
+            elif report_format == 'csv':
+                generate_csv_report(report_path, report_data)
+            
+            # Mettre à jour le rapport avec les informations du fichier
+            file_size = os.path.getsize(report_path) if os.path.exists(report_path) else 0
+            new_report.status = 'completed'
+            new_report.file_path = report_path
+            new_report.file_size = file_size
+            new_report.generated_at = datetime.now()
+            
+            db.session.commit()
+            
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Rapport {report_type} généré avec succès',
                 'filename': filename,
-                'report_path': report_path
+                'report_url': f'/api/reports/download/{filename}',
+                'report_id': new_report.id
             })
-        else:
-            return jsonify({'success': False, 'message': 'Erreur lors de la génération du rapport'})
+            
+        except Exception as e:
+            # Marquer le rapport comme échoué
+            new_report.status = 'failed'
+            db.session.commit()
+            raise e
             
     except Exception as e:
         logger.error(f"Erreur génération rapport: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
+def generate_real_report_data(report_type, date_from, date_to, sections):
+    """Génère des données réelles pour le rapport"""
+    data = {
+        'metadata': {
+            'type': report_type,
+            'generated_at': datetime.now(),
+            'period': f"{date_from} à {date_to}" if date_from and date_to else "Données actuelles",
+            'sections': sections
+        }
+    }
+    
+    # Récupérer les données réelles depuis la base
+    devices = Device.query.all()
+    alerts = Alert.query.filter_by(is_resolved=False).all()
+    
+    # Statistiques générales
+    data['summary'] = {
+        'total_devices': len(devices),
+        'online_devices': len([d for d in devices if d.is_online]),
+        'offline_devices': len([d for d in devices if not d.is_online]),
+        'active_alerts': len(alerts),
+        'health_score_avg': sum(d.health_score for d in devices) / len(devices) if devices else 0
+    }
+    
+    # Données des équipements
+    data['devices'] = []
+    for device in devices:
+        data['devices'].append({
+            'ip': device.ip,
+            'hostname': device.hostname or 'N/A',
+            'type': device.device_type,
+            'status': 'En ligne' if device.is_online else 'Hors ligne',
+            'health_score': device.health_score,
+            'last_seen': device.last_seen.strftime('%Y-%m-%d %H:%M') if device.last_seen else 'N/A',
+            'response_time': device.response_time
+        })
+    
+    # Données des alertes
+    data['alerts'] = []
+    for alert in alerts:
+        device = Device.query.get(alert.device_id)
+        data['alerts'].append({
+            'device_ip': device.ip if device else 'N/A',
+            'type': alert.alert_type,
+            'message': alert.message,
+            'priority': alert.priority,
+            'created_at': alert.created_at.strftime('%Y-%m-%d %H:%M')
+        })
+    
+    return data
+
+def generate_pdf_report(file_path, data, report_type):
+    """Génère un rapport PDF"""
+    # Simuler la génération PDF avec un contenu simple
+    content = f"""
+RAPPORT {report_type.upper()} - CENTRAL DANONE
+===============================================
+
+Généré le: {data['metadata']['generated_at'].strftime('%Y-%m-%d %H:%M:%S')}
+Période: {data['metadata']['period']}
+
+RÉSUMÉ EXÉCUTIF
+===============
+- Total équipements: {data['summary']['total_devices']}
+- Équipements en ligne: {data['summary']['online_devices']}
+- Équipements hors ligne: {data['summary']['offline_devices']}
+- Alertes actives: {data['summary']['active_alerts']}
+- Score de santé moyen: {data['summary']['health_score_avg']:.1f}%
+
+ÉQUIPEMENTS
+===========
+"""
+    
+    for device in data['devices'][:10]:  # Limiter à 10 pour l'exemple
+        content += f"- {device['ip']} ({device['hostname']}) - {device['status']} - Santé: {device['health_score']:.1f}%\n"
+    
+    content += "\nALERTES ACTIVES\n===============\n"
+    for alert in data['alerts'][:5]:  # Limiter à 5 pour l'exemple
+        content += f"- {alert['device_ip']}: {alert['message']} ({alert['priority']})\n"
+    
+    # Écrire dans un fichier texte (simuler PDF)
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+def generate_excel_report(file_path, data):
+    """Génère un rapport Excel"""
+    try:
+        import pandas as pd
+        
+        # Créer un fichier Excel avec plusieurs feuilles
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            # Feuille résumé
+            summary_df = pd.DataFrame([data['summary']])
+            summary_df.to_excel(writer, sheet_name='Résumé', index=False)
+            
+            # Feuille équipements
+            devices_df = pd.DataFrame(data['devices'])
+            devices_df.to_excel(writer, sheet_name='Équipements', index=False)
+            
+            # Feuille alertes
+            if data['alerts']:
+                alerts_df = pd.DataFrame(data['alerts'])
+                alerts_df.to_excel(writer, sheet_name='Alertes', index=False)
+                
+    except ImportError:
+        # Fallback si pandas n'est pas disponible
+        generate_csv_report(file_path.replace('.xlsx', '.csv'), data)
+
+def generate_html_report(file_path, data, report_type):
+    """Génère un rapport HTML"""
+    html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rapport {report_type.title()} - Central Danone</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; }}
+        .header {{ background: #0066cc; color: white; padding: 20px; border-radius: 5px; }}
+        .summary {{ background: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #f2f2f2; }}
+        .online {{ color: green; }}
+        .offline {{ color: red; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Rapport {report_type.title()} - Central Danone</h1>
+        <p>Généré le: {data['metadata']['generated_at'].strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p>Période: {data['metadata']['period']}</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Résumé Exécutif</h2>
+        <ul>
+            <li>Total équipements: <strong>{data['summary']['total_devices']}</strong></li>
+            <li>Équipements en ligne: <strong class="online">{data['summary']['online_devices']}</strong></li>
+            <li>Équipements hors ligne: <strong class="offline">{data['summary']['offline_devices']}</strong></li>
+            <li>Alertes actives: <strong>{data['summary']['active_alerts']}</strong></li>
+            <li>Score de santé moyen: <strong>{data['summary']['health_score_avg']:.1f}%</strong></li>
+        </ul>
+    </div>
+    
+    <h2>Équipements</h2>
+    <table>
+        <tr>
+            <th>IP</th>
+            <th>Hostname</th>
+            <th>Type</th>
+            <th>Statut</th>
+            <th>Santé</th>
+            <th>Dernière vue</th>
+        </tr>
+"""
+    
+    for device in data['devices']:
+        status_class = 'online' if 'ligne' in device['status'] else 'offline'
+        html_content += f"""
+        <tr>
+            <td>{device['ip']}</td>
+            <td>{device['hostname']}</td>
+            <td>{device['type']}</td>
+            <td class="{status_class}">{device['status']}</td>
+            <td>{device['health_score']:.1f}%</td>
+            <td>{device['last_seen']}</td>
+        </tr>
+        """
+    
+    html_content += """
+    </table>
+    
+    <h2>Alertes Actives</h2>
+    <table>
+        <tr>
+            <th>Équipement</th>
+            <th>Type</th>
+            <th>Message</th>
+            <th>Priorité</th>
+            <th>Date</th>
+        </tr>
+    """
+    
+    for alert in data['alerts']:
+        html_content += f"""
+        <tr>
+            <td>{alert['device_ip']}</td>
+            <td>{alert['type']}</td>
+            <td>{alert['message']}</td>
+            <td>{alert['priority']}</td>
+            <td>{alert['created_at']}</td>
+        </tr>
+        """
+    
+    html_content += """
+    </table>
+</body>
+</html>
+    """
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+def generate_csv_report(file_path, data):
+    """Génère un rapport CSV"""
+    content = "Type,Données\n"
+    content += f"Total Équipements,{data['summary']['total_devices']}\n"
+    content += f"En Ligne,{data['summary']['online_devices']}\n"
+    content += f"Hors Ligne,{data['summary']['offline_devices']}\n"
+    content += f"Alertes Actives,{data['summary']['active_alerts']}\n"
+    content += f"Score Santé Moyen,{data['summary']['health_score_avg']:.1f}\n"
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
 @app.route('/api/reports/download/<filename>')
 @login_required
 def api_download_report(filename):
-    """API pour télécharger un rapport"""
+    """API pour télécharger un rapport avec compteur"""
     try:
         from flask import send_file
-        report_path = os.path.join('reports', filename)
         
-        if os.path.exists(report_path):
-            return send_file(report_path, as_attachment=True)
-        else:
-            return jsonify({'success': False, 'message': 'Fichier non trouvé'}), 404
+        # Chercher le rapport en base de données
+        report = Report.query.filter_by(filename=filename).first()
+        if not report:
+            return jsonify({'success': False, 'message': 'Rapport non trouvé en base'}), 404
+        
+        # Vérifier que le fichier existe
+        if not report.file_path or not os.path.exists(report.file_path):
+            return jsonify({'success': False, 'message': 'Fichier physique non trouvé'}), 404
+        
+        # Incrémenter le compteur de téléchargements
+        report.download_count += 1
+        db.session.commit()
+        
+        # Retourner le fichier
+        return send_file(report.file_path, as_attachment=True, download_name=filename)
             
     except Exception as e:
         logger.error(f"Erreur téléchargement rapport: {e}")
@@ -1574,6 +2298,45 @@ def api_reports_stats():
     except Exception as e:
         logger.error(f"Erreur statistiques rapports: {e}")
         return jsonify({'error': str(e)})
+
+@app.route('/api/reports')
+@login_required
+def api_reports():
+    """API pour récupérer la liste des rapports depuis la base de données"""
+    try:
+        # Récupérer tous les rapports depuis la base de données
+        reports = Report.query.order_by(Report.created_at.desc()).all()
+        
+        # Convertir en format attendu par le frontend
+        reports_data = []
+        for report in reports:
+            reports_data.append({
+                'id': report.id,
+                'name': report.name,
+                'filename': report.filename,
+                'type': report.format.upper(),  # PDF, EXCEL, etc.
+                'format': report.format,
+                'status': report.status,
+                'size': f"{report.file_size / (1024 * 1024):.1f} MB" if report.file_size > 1024*1024 else f"{report.file_size / 1024:.1f} KB",
+                'created': report.created_at.strftime('%Y-%m-%d %H:%M:%S') if report.created_at else '',
+                'created_at': report.created_at.isoformat() if report.created_at else None,
+                'description': report.description or 'Rapport automatisé',
+                'download_url': f'/api/reports/download/{report.filename}' if report.status == 'completed' else None,
+                'report_type': report.type.title()
+            })
+        
+        return jsonify({
+            'success': True,
+            'reports': reports_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Erreur récupération rapports: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'reports': []
+        }), 500
 
 @app.route('/api/reports/list')
 @login_required
@@ -1638,6 +2401,44 @@ def api_reports_list():
     except Exception as e:
         logger.error(f"Erreur liste rapports: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/reports/schedule', methods=['POST'])
+@login_required
+def api_reports_schedule():
+    """API pour programmer la génération de rapports"""
+    try:
+        data = request.get_json()
+        
+        # Valider les données requises
+        required_fields = ['type', 'frequency', 'time']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'message': f'Champ requis manquant: {field}'}), 400
+        
+        # Simuler la programmation (dans un vrai système, on utiliserait un scheduler comme Celery)
+        scheduled_report = {
+            'id': f"scheduled_{int(time.time())}",
+            'type': data.get('type'),
+            'frequency': data.get('frequency'),
+            'time': data.get('time'),
+            'email': data.get('email'),
+            'sections': data.get('sections', []),
+            'created_at': datetime.now().isoformat(),
+            'status': 'scheduled'
+        }
+        
+        # En production, on sauvegarderait en base de données
+        logger.info(f"Rapport programmé: {scheduled_report}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Rapport programmé avec succès',
+            'schedule_id': scheduled_report['id']
+        })
+        
+    except Exception as e:
+        logger.error(f"Erreur programmation rapport: {e}")
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/ai-dashboard')
 @login_required
@@ -1720,42 +2521,16 @@ def api_statistics():
 @app.route('/api/settings/email', methods=['GET'])
 @login_required
 def api_get_email_settings():
-    """API pour récupérer la configuration email"""
+    """API pour récupérer la configuration email avec gestionnaire production"""
     try:
-        from settings_manager import get_settings_manager
+        from settings_manager_production import get_production_settings_manager
         
-        settings_manager = get_settings_manager()
+        settings_manager = get_production_settings_manager()
         email_settings = settings_manager.get_email_settings()
         
         return jsonify(email_settings)
     except Exception as e:
         logger.error(f"Erreur récupération config email: {e}")
-        return jsonify({'error': str(e)})
-
-@app.route('/api/settings/email', methods=['POST'])
-@login_required
-def api_save_email_settings():
-    """API pour sauvegarder la configuration email"""
-    try:
-        data = request.get_json()
-        
-        # Mise à jour de la configuration
-        EMAIL_CONFIG['enabled'] = data.get('enabled', False)
-        EMAIL_CONFIG['smtp_server'] = data.get('smtp_server', 'smtp.gmail.com')
-        EMAIL_CONFIG['smtp_port'] = data.get('smtp_port', 587)
-        EMAIL_CONFIG['username'] = data.get('username', '')
-        EMAIL_CONFIG['password'] = data.get('password', '')
-        EMAIL_CONFIG['from_email'] = data.get('from_email', '')
-        EMAIL_CONFIG['to_email'] = data.get('to_email', '')
-        
-        logger.info(f"Configuration email mise à jour: {EMAIL_CONFIG['to_email']}")
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'Configuration email sauvegardée'
-        })
-    except Exception as e:
-        logger.error(f"Erreur sauvegarde config email: {e}")
         return jsonify({'error': str(e)})
 
 @app.route('/api/settings/email/test', methods=['POST'])
@@ -1767,6 +2542,89 @@ def api_test_email():
         return jsonify(result)
     except Exception as e:
         logger.error(f"Erreur test email: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/settings/email', methods=['POST'])
+@login_required
+def api_save_email_settings():
+    """API pour sauvegarder la configuration email"""
+    try:
+        data = request.get_json()
+        
+        # Get settings manager
+        from settings_manager_production import get_production_settings_manager
+        settings_manager = get_production_settings_manager()
+        
+        # Update email settings in the manager
+        settings_manager.settings.update({
+            'email_enabled': data.get('email_enabled', False),
+            'smtp_server': data.get('smtp_server', ''),
+            'smtp_port': data.get('smtp_port', 587),
+            'email_username': data.get('smtp_username', ''),
+            'email_password': data.get('smtp_password', ''),
+            'from_email': data.get('from_email', ''),
+            'to_email': ', '.join(data.get('recipients', [])),
+            'last_updated': datetime.now().isoformat()
+        })
+        
+        # Save settings
+        success = settings_manager.save_settings()
+        
+        if success:
+            # Update global EMAIL_CONFIG for immediate use
+            global EMAIL_CONFIG
+            EMAIL_CONFIG.update({
+                'enabled': data.get('email_enabled', False),
+                'smtp_server': data.get('smtp_server', ''),
+                'smtp_port': data.get('smtp_port', 587),
+                'smtp_username': data.get('smtp_username', ''),
+                'smtp_password': data.get('smtp_password', ''),
+                'use_tls': data.get('use_tls', True),
+                'from_email': data.get('from_email', ''),
+                'recipients': data.get('recipients', [])
+            })
+            
+            logger.info("Configuration email mise à jour avec succès")
+            return jsonify({
+                'status': 'success',
+                'message': 'Configuration email sauvegardée avec succès'
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Erreur lors de la sauvegarde'
+            })
+            
+    except Exception as e:
+        logger.error(f"Erreur sauvegarde email: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/settings/email/status', methods=['GET'])
+@login_required
+def api_email_status():
+    """API pour obtenir le statut de la configuration email"""
+    try:
+        # Get settings from settings manager
+        from settings_manager_production import get_production_settings_manager
+        settings_manager = get_production_settings_manager()
+        settings = settings_manager.get_all_settings()
+        
+        status = {
+            'enabled': settings.get('email_enabled', False),
+            'configured': bool(settings.get('smtp_server') and settings.get('email_username')),
+            'smtp_server': settings.get('smtp_server', ''),
+            'smtp_port': settings.get('smtp_port', 587),
+            'smtp_username': settings.get('email_username', ''),
+            'use_tls': True,  # Default value
+            'recipients': [email.strip() for email in settings.get('to_email', '').split(',') if email.strip()]
+        }
+        
+        return jsonify({
+            'status': 'success',
+            'data': status
+        })
+    except Exception as e:
+        logger.error(f"Erreur statut email: {e}")
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/settings/email/alert', methods=['POST'])

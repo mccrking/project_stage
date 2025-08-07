@@ -10,9 +10,6 @@ class ThemeManager {
         // Appliquer le thème au chargement
         this.applyTheme(this.currentTheme);
         
-        // Créer le switch de thème dans la navbar
-        this.createThemeSwitch();
-        
         // Écouter les changements de préférences système
         this.listenForSystemThemeChange();
         
@@ -53,33 +50,6 @@ class ThemeManager {
         
         // Animation de transition
         this.addTransitionEffect();
-    }
-
-    createThemeSwitch() {
-        // Chercher la navbar
-        const navbar = document.querySelector('.navbar-nav');
-        if (!navbar) return;
-
-        // Créer le conteneur du switch
-        const switchContainer = document.createElement('li');
-        switchContainer.className = 'nav-item d-flex align-items-center ms-3';
-        switchContainer.innerHTML = `
-            <div class="theme-switch-container">
-                <label class="theme-switch">
-                    <input type="checkbox" id="theme-toggle">
-                    <span class="slider"></span>
-                </label>
-                <span class="theme-icon ms-2" id="theme-icon">🌙</span>
-            </div>
-        `;
-
-        // Ajouter au navbar
-        navbar.appendChild(switchContainer);
-
-        // Écouter les changements
-        const toggle = document.getElementById('theme-toggle');
-        toggle.checked = this.currentTheme === 'dark';
-        toggle.addEventListener('change', () => this.toggleTheme());
     }
 
     updateThemeSwitchIcon(theme) {
@@ -142,194 +112,6 @@ class ThemeManager {
                 link.classList.add('active');
             }
         });
-    }
-}
-
-// ===== NOTIFICATIONS PUSH EN TEMPS RÉEL =====
-
-class NotificationManager {
-    constructor() {
-        this.notifications = [];
-        this.isSupported = 'Notification' in window;
-        this.init();
-    }
-
-    init() {
-        if (this.isSupported) {
-            this.requestPermission();
-            this.setupWebSocket();
-        }
-    }
-
-    async requestPermission() {
-        if (Notification.permission === 'default') {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                this.showNotification('Notifications activées', 'Vous recevrez maintenant les alertes en temps réel.');
-            }
-        }
-    }
-
-    setupWebSocket() {
-        // Simulation WebSocket pour l'instant
-        // Dans une vraie implémentation, on utiliserait une vraie connexion WebSocket
-        this.simulateWebSocket();
-    }
-
-    simulateWebSocket() {
-        // Simuler des notifications périodiques
-        setInterval(() => {
-            if (Math.random() > 0.8) { // 20% de chance
-                this.showRandomNotification();
-            }
-        }, 30000); // Toutes les 30 secondes
-    }
-
-    showRandomNotification() {
-        const notifications = [
-            { title: 'Nouvel équipement détecté', message: 'Un nouvel équipement a été trouvé sur le réseau.' },
-            { title: 'Alerte de performance', message: 'Temps de réponse élevé détecté sur le serveur principal.' },
-            { title: 'Scan réseau terminé', message: 'Le scan automatique du réseau est terminé.' },
-            { title: 'Mise à jour IA', message: 'Les modèles d\'IA ont été mis à jour avec de nouvelles données.' }
-        ];
-
-        const notification = notifications[Math.floor(Math.random() * notifications.length)];
-        this.showNotification(notification.title, notification.message);
-    }
-
-    showNotification(title, message, options = {}) {
-        if (!this.isSupported || Notification.permission !== 'granted') {
-            this.showToastNotification(title, message);
-            return;
-        }
-
-        const notification = new Notification(title, {
-            body: message,
-            icon: '/static/img/danone-logo.png',
-            badge: '/static/img/danone-logo.png',
-            tag: 'danone-dashboard',
-            requireInteraction: false,
-            ...options
-        });
-
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
-
-        // Ajouter aussi une notification toast
-        this.showToastNotification(title, message);
-    }
-
-    showToastNotification(title, message) {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification fade-in';
-        toast.innerHTML = `
-            <div class="toast-header">
-                <strong>${title}</strong>
-                <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
-            </div>
-            <div class="toast-body">
-                ${message}
-            </div>
-        `;
-
-        // Ajouter au conteneur de notifications
-        let container = document.getElementById('notification-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'notification-container';
-            container.className = 'notification-container';
-            document.body.appendChild(container);
-        }
-
-        container.appendChild(toast);
-
-        // Supprimer automatiquement après 5 secondes
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 5000);
-    }
-}
-
-// ===== GESTIONNAIRE D'ANIMATIONS =====
-
-class AnimationManager {
-    constructor() {
-        this.init();
-    }
-
-    init() {
-        this.addScrollAnimations();
-        this.addHoverEffects();
-        this.addLoadingAnimations();
-    }
-
-    addScrollAnimations() {
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('fade-in');
-                }
-            });
-        }, observerOptions);
-
-        // Observer tous les éléments avec la classe 'animate-on-scroll'
-        document.querySelectorAll('.animate-on-scroll').forEach(el => {
-            observer.observe(el);
-        });
-    }
-
-    addHoverEffects() {
-        // Effets de survol pour les cartes
-        document.querySelectorAll('.card').forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-5px) scale(1.02)';
-            });
-
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'translateY(0) scale(1)';
-            });
-        });
-
-        // Effets de survol pour les boutons
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('mouseenter', () => {
-                btn.style.transform = 'translateY(-2px)';
-            });
-
-            btn.addEventListener('mouseleave', () => {
-                btn.style.transform = 'translateY(0)';
-            });
-        });
-    }
-
-    addLoadingAnimations() {
-        // Animation de chargement pour les données
-        document.querySelectorAll('[data-loading]').forEach(element => {
-            element.addEventListener('click', () => {
-                this.showLoading(element);
-            });
-        });
-    }
-
-    showLoading(element) {
-        const originalContent = element.innerHTML;
-        element.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Chargement...';
-        element.disabled = true;
-
-        // Simuler un chargement
-        setTimeout(() => {
-            element.innerHTML = originalContent;
-            element.disabled = false;
-        }, 2000);
     }
 }
 
@@ -438,11 +220,11 @@ class ResponsiveManager {
 // ===== INITIALISATION =====
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialiser tous les gestionnaires
+    // Initialiser les gestionnaires définis dans ce fichier
     window.themeManager = new ThemeManager();
-    window.notificationManager = new NotificationManager();
-    window.animationManager = new AnimationManager();
     window.responsiveManager = new ResponsiveManager();
+    
+    // AnimationManager et NotificationManager sont initialisés par enhanced-global.js
 
     // Ajouter les styles CSS pour les notifications
     const style = document.createElement('style');
@@ -507,7 +289,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.DanoneUI = {
     ThemeManager,
-    NotificationManager,
-    AnimationManager,
     ResponsiveManager
-}; 
+};
+
+// ===== INITIALISATION AUTOMATIQUE =====
+
+// Initialiser le thème manager au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // Éviter les initialisations multiples
+    if (window.themeManager) {
+        console.log('🎨 Theme Manager déjà initialisé');
+        return;
+    }
+    
+    // Créer une instance globale du theme manager
+    window.themeManager = new ThemeManager();
+    
+    // Attendre que la navbar soit créée puis initialiser le switch
+    setTimeout(() => {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            // S'assurer qu'il n'y a qu'un seul event listener
+            toggle.removeEventListener('change', window.themeManager.toggleTheme);
+            toggle.checked = window.themeManager.currentTheme === 'dark';
+            toggle.addEventListener('change', () => window.themeManager.toggleTheme());
+            
+            // Mettre à jour l'icône initiale
+            window.themeManager.updateThemeSwitchIcon(window.themeManager.currentTheme);
+            
+            console.log('🎨 Switch de thème initialisé:', window.themeManager.currentTheme);
+        } else {
+            console.warn('❌ Switch de thème non trouvé dans le DOM');
+        }
+    }, 100);
+    
+    // Supprimer les switches de thème en double (garder seulement le premier)
+    setTimeout(() => {
+        const switches = document.querySelectorAll('.theme-switch-container');
+        if (switches.length > 1) {
+            for (let i = 1; i < switches.length; i++) {
+                switches[i].remove();
+                console.log('🧹 Switch de thème en double supprimé');
+            }
+        }
+    }, 200);
+    
+    console.log('🎨 Theme Manager initialisé:', window.themeManager.currentTheme);
+}); 

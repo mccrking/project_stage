@@ -1,8 +1,10 @@
 @echo off
 echo 🚀 Démarrage Central Danone avec Groq API...
 echo.
+echo ⚠️  IMPORTANT: Configurez votre clé API Groq
+echo.
 REM Définir la variable d'environnement Groq
-REM IMPORTANT: Remplacez YOUR_API_KEY par votre vraie clé API
+REM Remplacez YOUR_API_KEY par votre vraie clé API Groq
 set GROQ_API_KEY=YOUR_API_KEY_HERE
 REM Activer l'environnement virtuel
 call venv\Scripts\activate.bat

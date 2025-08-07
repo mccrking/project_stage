@@ -1,0 +1,995 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes - Central Danone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alerts-header {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-lg);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .alerts-header::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+    
+    .alert-card {
+        border-left: 4px solid;
+        margin-bottom: var(--spacing-md);
+        transition: all var(--transition-normal);
+        background: var(--card-bg);
+    }
+    
+    .alert-card:hover {
+        transform: translateX(5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .alert-critical {
+        border-left-color: #dc3545;
+        background: linear-gradient(90deg, rgba(220, 53, 69, 0.05), var(--card-bg));
+    }
+    
+    .alert-warning {
+        border-left-color: #ffc107;
+        background: linear-gradient(90deg, rgba(255, 193, 7, 0.05), var(--card-bg));
+    }
+    
+    .alert-info {
+        border-left-color: #0dcaf0;
+        background: linear-gradient(90deg, rgba(13, 202, 240, 0.05), var(--card-bg));
+    }
+    
+    .alert-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .alert-timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--danone-blue);
+    }
+    
+    .alert-timeline-item {
+        position: relative;
+        padding-bottom: var(--spacing-lg);
+    }
+    
+    .alert-timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -7px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--danone-blue);
+        border: 2px solid var(--card-bg);
+    }
+    
+    .filter-tabs {
+        background: var(--bg-secondary);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xs);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .filter-tab {
+        background: transparent;
+        border: none;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+        color: var(--text-secondary);
+    }
+    
+    .filter-tab.active {
+        background: var(--danone-blue);
+        color: white;
+    }
+    
+    .alert-priority-badge {
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .priority-critical { background: #dc3545; color: white; }
+    .priority-high { background: #fd7e14; color: white; }
+    .priority-medium { background: #ffc107; color: #000; }
+    .priority-low { background: #6c757d; color: white; }
+    
+    .alert-actions {
+        opacity: 0;
+        transition: opacity var(--transition-fast);
+    }
+    
+    .alert-card:hover .alert-actions {
+        opacity: 1;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .alert-chart {
+        height: 200px;
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-md);
+        border: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Enhanced Alerts Header -->
+<div class="alerts-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="h2 mb-2">
+                <i class="fas fa-shield-alt me-3"></i>
+                Centre d'Alertes Central Danone
+            </h1>
+            <p class="mb-0 opacity-90">Surveillance proactive et gestion intelligente des incidents</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex flex-column align-items-md-end">
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-light btn-sm" onclick="resolveAllAlerts()">
+                        <i class="fas fa-check-double me-2"></i>Résoudre Tout
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="refreshAlerts()">
+                        <i class="fas fa-sync-alt me-2"></i>Actualiser
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="exportAlerts()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                </div>
+                <div class="text-white-50">
+                    <small>Dernière vérification</small><br>
+                    <span id="alerts-last-update" class="fw-bold">--:--:--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Statistics -->
+<div class="stats-grid">
+    <div class="stat-card-enhanced alert-summary">
+        <div class="stat-number-enhanced text-danger">{{ active_count or 0 }}</div>
+        <div class="stat-label-enhanced">Alertes Actives</div>
+        <div class="text-center mt-2">
+            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 1.5rem;"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card-enhanced">
+        <div class="stat-number-enhanced text-warning">{{ critical_count or 0 }}</div>
+        <div class="stat-label-enhanced">Critiques</div>
+        <div class="text-center mt-2">
+            <i class="fas fa-fire text-warning" style="font-size: 1.5rem;"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card-enhanced">
+        <div class="stat-number-enhanced text-success">{{ resolved_today or 0 }}</div>
+        <div class="stat-label-enhanced">Résolues Aujourd'hui</div>
+        <div class="text-center mt-2">
+            <i class="fas fa-check-circle text-success" style="font-size: 1.5rem;"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card-enhanced">
+        <div class="stat-number-enhanced text-info">{{ avg_resolution_time or 0 }}min</div>
+        <div class="stat-label-enhanced">Temps Moyen Résolution</div>
+        <div class="text-center mt-2">
+            <i class="fas fa-clock text-info" style="font-size: 1.5rem;"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Filters -->
+<div class="card card-enhanced">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="filter-tabs d-inline-flex">
+                    <button class="filter-tab active" data-filter="all">
+                        <i class="fas fa-list me-2"></i>Toutes ({{ total_alerts or 0 }})
+                    </button>
+                    <button class="filter-tab" data-filter="active">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Actives ({{ active_count or 0 }})
+                    </button>
+                    <button class="filter-tab" data-filter="critical">
+                        <i class="fas fa-fire me-2"></i>Critiques ({{ critical_count or 0 }})
+                    </button>
+                    <button class="filter-tab" data-filter="resolved">
+                        <i class="fas fa-check-circle me-2"></i>Résolues
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control form-control-enhanced" 
+                           placeholder="Rechercher une alerte..." id="alert-search">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="row">
+    <!-- Alerts List -->
+    <div class="col-lg-8">
+        <div class="card card-enhanced">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Liste des Alertes
+                </h5>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="sort-alerts" style="width: auto;">
+                        <option value="recent">Plus récentes</option>
+                        <option value="priority">Priorité</option>
+                        <option value="device">Équipement</option>
+                        <option value="type">Type</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary" onclick="toggleView()">
+                        <i class="fas fa-th-list me-1"></i>Vue
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="alerts-container">
+                    <!-- Les alertes seront chargées ici dynamiquement -->
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                        <p>Chargement des alertes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Timeline & Analytics -->
+    <div class="col-lg-4">
+        <!-- Timeline des événements -->
+        <div class="card card-enhanced mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Timeline des Événements
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert-timeline" id="events-timeline">
+                    <!-- Timeline sera générée dynamiquement -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analytics Chart -->
+        <div class="card card-enhanced">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Tendance des Alertes
+                </h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour détails d'alerte -->
+<div class="modal fade" id="alertDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-enhanced">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Détails de l'Alerte
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alert-details-content">
+                <!-- Contenu chargé dynamiquement -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-success" onclick="resolveCurrentAlert()">
+                    <i class="fas fa-check me-2"></i>Résoudre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced Alerts Page JavaScript
+class AlertsManager {
+    constructor() {
+        this.currentFilter = 'all';
+        this.currentSort = 'recent';
+        this.alerts = [];
+        this.selectedAlert = null;
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadAlerts();
+        this.initializeChart();
+        this.startAutoRefresh();
+        this.updateTimestamp();
+    }
+
+    bindEvents() {
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                this.setActiveFilter(e.target.dataset.filter);
+            });
+        });
+
+        // Search
+        document.getElementById('alert-search').addEventListener('input', 
+            this.debounce((e) => this.filterAlerts(e.target.value), 300)
+        );
+
+        // Sort
+        document.getElementById('sort-alerts').addEventListener('change', (e) => {
+            this.currentSort = e.target.value;
+            this.renderAlerts();
+        });
+
+        // Global functions for buttons
+        window.resolveAllAlerts = () => this.resolveAllAlerts();
+        window.refreshAlerts = () => this.loadAlerts();
+        window.exportAlerts = () => this.exportAlerts();
+        window.toggleView = () => this.toggleView();
+        window.resolveCurrentAlert = () => this.resolveCurrentAlert();
+    }
+
+    setActiveFilter(filter) {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+        this.currentFilter = filter;
+        this.renderAlerts();
+    }
+
+    async loadAlerts() {
+        try {
+            const response = await fetch('/api/alerts');
+            const data = await response.json();
+            this.alerts = data.alerts || [];
+            this.renderAlerts();
+            this.updateTimeline();
+            this.updateChart();
+            this.updateStats();
+        } catch (error) {
+            console.error('Erreur chargement alertes:', error);
+            if (window.notificationManager) {
+                window.notificationManager.error('Erreur lors du chargement des alertes');
+            }
+        }
+    }
+
+    renderAlerts() {
+        const container = document.getElementById('alerts-container');
+        let filteredAlerts = this.getFilteredAlerts();
+        
+        if (filteredAlerts.length === 0) {
+            container.innerHTML = this.renderEmptyState();
+            return;
+        }
+
+        // Sort alerts
+        filteredAlerts = this.sortAlerts(filteredAlerts);
+
+        const alertsHTML = filteredAlerts.map(alert => this.renderAlert(alert)).join('');
+        container.innerHTML = alertsHTML;
+
+        // Bind individual alert events
+        this.bindAlertEvents();
+    }
+
+    renderAlert(alert) {
+        const priorityClass = this.getPriorityClass(alert.priority);
+        const priorityBadge = this.getPriorityBadge(alert.priority);
+        const timeAgo = this.getTimeAgo(alert.created_at);
+        
+        return `
+            <div class="alert-card ${priorityClass}" data-alert-id="${alert.id}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-1">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="${alert.id}" id="alert-${alert.id}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            ${priorityBadge}
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge bg-secondary">${alert.alert_type}</span>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="fw-bold">${alert.device_name || alert.ip || 'N/A'}</div>
+                            <small class="text-muted">${alert.ip || ''}</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="alert-message">${alert.message}</div>
+                            <small class="text-muted">${timeAgo}</small>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="alert-actions">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="this.showAlertDetails(${alert.id})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="this.resolveAlert(${alert.id})">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    renderEmptyState() {
+        return `
+            <div class="p-5 text-center text-muted">
+                <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                <h5>Aucune alerte ${this.currentFilter === 'all' ? '' : this.getFilterText()}</h5>
+                <p>Excellent ! Votre réseau fonctionne parfaitement.</p>
+                <button class="btn btn-outline-primary" onclick="refreshAlerts()">
+                    <i class="fas fa-sync-alt me-2"></i>Actualiser
+                </button>
+            </div>
+        `;
+    }
+
+    getFilteredAlerts() {
+        switch (this.currentFilter) {
+            case 'active':
+                return this.alerts.filter(alert => alert.status === 'active');
+            case 'critical':
+                return this.alerts.filter(alert => alert.priority === 'critical');
+            case 'resolved':
+                return this.alerts.filter(alert => alert.status === 'resolved');
+            default:
+                return this.alerts;
+        }
+    }
+
+    sortAlerts(alerts) {
+        switch (this.currentSort) {
+            case 'priority':
+                const priorityOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3 };
+                return alerts.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+            case 'device':
+                return alerts.sort((a, b) => (a.device_name || '').localeCompare(b.device_name || ''));
+            case 'type':
+                return alerts.sort((a, b) => a.alert_type.localeCompare(b.alert_type));
+            default: // recent
+                return alerts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+    }
+
+    getPriorityClass(priority) {
+        const classes = {
+            'critical': 'alert-critical',
+            'high': 'alert-warning',
+            'medium': 'alert-info',
+            'low': 'alert-info'
+        };
+        return classes[priority] || 'alert-info';
+    }
+
+    getPriorityBadge(priority) {
+        const badges = {
+            'critical': '<span class="alert-priority-badge priority-critical"><i class="fas fa-fire me-1"></i>Critique</span>',
+            'high': '<span class="alert-priority-badge priority-high"><i class="fas fa-exclamation-triangle me-1"></i>Élevée</span>',
+            'medium': '<span class="alert-priority-badge priority-medium"><i class="fas fa-info-circle me-1"></i>Moyenne</span>',
+            'low': '<span class="alert-priority-badge priority-low"><i class="fas fa-minus-circle me-1"></i>Faible</span>'
+        };
+        return badges[priority] || badges['low'];
+    }
+
+    getTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `Il y a ${days} jour${days > 1 ? 's' : ''}`;
+        if (hours > 0) return `Il y a ${hours}h`;
+        if (minutes > 0) return `Il y a ${minutes}min`;
+        return 'À l\'instant';
+    }
+
+    async resolveAlert(alertId) {
+        try {
+            const response = await fetch(`/api/alert/${alertId}/resolve`, { method: 'POST' });
+            const result = await response.json();
+            
+            if (result.success) {
+                if (window.notificationManager) {
+                    window.notificationManager.success('Alerte résolue avec succès');
+                }
+                this.loadAlerts(); // Refresh
+            } else {
+                throw new Error(result.message || 'Erreur lors de la résolution');
+            }
+        } catch (error) {
+            if (window.notificationManager) {
+                window.notificationManager.error('Erreur lors de la résolution de l\'alerte');
+            }
+        }
+    }
+
+    async resolveAllAlerts() {
+        if (!confirm('Êtes-vous sûr de vouloir résoudre toutes les alertes actives ?')) {
+            return;
+        }
+
+        try {
+            const activeAlerts = this.alerts.filter(alert => alert.status === 'active');
+            if (activeAlerts.length === 0) {
+                if (window.notificationManager) {
+                    window.notificationManager.info('Aucune alerte active à résoudre');
+                }
+                return;
+            }
+
+            const response = await fetch('/api/alerts/bulk-resolve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ alert_ids: activeAlerts.map(a => a.id) })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                if (window.notificationManager) {
+                    window.notificationManager.success(`${result.resolved_count} alertes résolues`);
+                }
+                this.loadAlerts();
+            }
+        } catch (error) {
+            if (window.notificationManager) {
+                window.notificationManager.error('Erreur lors de la résolution groupée');
+            }
+        }
+    }
+
+    initializeChart() {
+        const ctx = document.getElementById('alertsChart');
+        if (!ctx) return;
+
+        this.chart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                datasets: [{
+                    label: 'Alertes par jour',
+                    data: [12, 8, 15, 6, 10, 4, 7],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    updateTimeline() {
+        const timeline = document.getElementById('events-timeline');
+        const recentEvents = this.alerts
+            .filter(alert => alert.status === 'active')
+            .slice(0, 5)
+            .map(alert => {
+                const timeAgo = this.getTimeAgo(alert.created_at);
+                return `
+                    <div class="alert-timeline-item">
+                        <div class="fw-bold">${alert.alert_type}</div>
+                        <div class="text-muted small">${alert.device_name || alert.ip}</div>
+                        <div class="text-muted small">${timeAgo}</div>
+                    </div>
+                `;
+            }).join('');
+            
+        timeline.innerHTML = recentEvents || '<p class="text-muted">Aucun événement récent</p>';
+    }
+
+    updateStats() {
+        const active = this.alerts.filter(a => a.status === 'active').length;
+        const critical = this.alerts.filter(a => a.priority === 'critical').length;
+        const resolvedToday = this.alerts.filter(a => 
+            a.status === 'resolved' && 
+            new Date(a.resolved_at).toDateString() === new Date().toDateString()
+        ).length;
+
+        // Mise à jour des statistiques avec animations
+        this.animateStatNumber('.stats-grid .stat-card-enhanced:nth-child(1) .stat-number-enhanced', active);
+        this.animateStatNumber('.stats-grid .stat-card-enhanced:nth-child(2) .stat-number-enhanced', critical);
+        this.animateStatNumber('.stats-grid .stat-card-enhanced:nth-child(3) .stat-number-enhanced', resolvedToday);
+    }
+
+    animateStatNumber(selector, targetNumber) {
+        const element = document.querySelector(selector);
+        if (!element) return;
+        
+        const startNumber = parseInt(element.textContent) || 0;
+        const duration = 1000;
+        const startTime = Date.now();
+        
+        function updateNumber() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            const currentNumber = Math.round(startNumber + (targetNumber - startNumber) * easedProgress);
+            element.textContent = currentNumber + (element.textContent.includes('min') ? 'min' : '');
+            
+            if (progress < 1) {
+                requestAnimationFrame(updateNumber);
+            }
+        }
+        
+        requestAnimationFrame(updateNumber);
+    }
+
+    filterAlerts(searchTerm) {
+        if (!searchTerm) {
+            this.renderAlerts();
+            return;
+        }
+
+        const filtered = this.getFilteredAlerts().filter(alert =>
+            alert.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (alert.device_name && alert.device_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            alert.alert_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            alert.ip.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        const container = document.getElementById('alerts-container');
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="p-4 text-center text-muted">
+                    <i class="fas fa-search fa-2x mb-3"></i>
+                    <p>Aucune alerte trouvée pour "${searchTerm}"</p>
+                </div>
+            `;
+        } else {
+            const alertsHTML = filtered.map(alert => this.renderAlert(alert)).join('');
+            container.innerHTML = alertsHTML;
+        }
+    }
+
+    startAutoRefresh() {
+        setInterval(() => {
+            if (!document.hidden) {
+                this.loadAlerts();
+            }
+        }, 30000); // Refresh every 30 seconds
+    }
+
+    updateTimestamp() {
+        const updateTime = () => {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR');
+            const element = document.getElementById('alerts-last-update');
+            if (element) {
+                element.textContent = timeString;
+            }
+        };
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    exportAlerts() {
+        const alerts = this.getFilteredAlerts();
+        const csv = this.convertToCSV(alerts);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `alertes_danone_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>
+                                    {% if alert.priority == 'critical' %}
+                                        <span class="badge bg-danger">Critique</span>
+                                    {% elif alert.priority == 'high' %}
+                                        <span class="badge bg-warning">Élevée</span>
+                                    {% elif alert.priority == 'medium' %}
+                                        <span class="badge bg-info">Moyenne</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Faible</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ alert.alert_type }}</span>
+                                </td>
+                                <td>
+                                    {% set device = alert.device %}
+                                    {% if device %}
+                                        <strong>{{ device.ip }}</strong><br>
+                                        <small class="text-muted">{{ device.hostname or 'N/A' }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Équipement supprimé</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ alert.message }}</td>
+                                <td>{{ alert.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-success btn-resolve-alert" 
+                                            data-alert-id="{{ alert.id }}">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>Aucune alerte active</h5>
+                    <p class="text-muted">Toutes les alertes ont été résolues</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes résolues récentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history me-2"></i>
+                Alertes résolues récentes
+            </div>
+            <div class="card-body p-0">
+                {% if resolved_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Priorité</th>
+                                <th>Type</th>
+                                <th>Équipement</th>
+                                <th>Message</th>
+                                <th>Résolue le</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in resolved_alerts %}
+                            <tr>
+                                <td>
+                                    {% if alert.priority == 'critical' %}
+                                        <span class="badge bg-danger">Critique</span>
+                                    {% elif alert.priority == 'high' %}
+                                        <span class="badge bg-warning">Élevée</span>
+                                    {% elif alert.priority == 'medium' %}
+                                        <span class="badge bg-info">Moyenne</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Faible</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ alert.alert_type }}</span>
+                                </td>
+                                <td>
+                                    {% set device = alert.device %}
+                                    {% if device %}
+                                        <strong>{{ device.ip }}</strong><br>
+                                        <small class="text-muted">{{ device.hostname or 'N/A' }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Équipement supprimé</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ alert.message }}</td>
+                                <td>{{ alert.resolved_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                    <h5>Aucune alerte résolue</h5>
+                    <p class="text-muted">Historique des alertes résolues</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Résolution d'une alerte individuelle
+    document.querySelectorAll('.btn-resolve-alert').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alertId = this.dataset.alertId;
+            resolveAlert(alertId);
+        });
+    });
+    
+    // Sélection de toutes les alertes
+    document.getElementById('select-all-alerts').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.alert-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    // Résolution de toutes les alertes sélectionnées
+    document.getElementById('btn-resolve-all').addEventListener('click', function() {
+        const selectedAlerts = Array.from(document.querySelectorAll('.alert-checkbox:checked'))
+            .map(checkbox => checkbox.value);
+        
+        if (selectedAlerts.length > 0) {
+            resolveMultipleAlerts(selectedAlerts);
+        } else {
+            showAlert('warning', 'Veuillez sélectionner au moins une alerte');
+        }
+    });
+    
+    // Actualisation des alertes
+    document.getElementById('btn-refresh-alerts').addEventListener('click', function() {
+        // Suppression du reload automatique - utilisation d'une fonction de rafraîchissement AJAX
+        // window.location.reload();
+        loadAlerts();
+    });
+});
+
+function resolveAlert(alertId) {
+    fetch(`/api/alert/${alertId}/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', 'Alerte résolue avec succès');
+            // Suppression du reload automatique - rechargement AJAX
+            // setTimeout(() => window.location.reload(), 1000);
+            loadAlerts();
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur lors de la résolution: ' + error.message);
+    });
+}
+
+function resolveMultipleAlerts(alertIds) {
+    fetch('/api/alerts/bulk-resolve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            alert_ids: alertIds
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', data.message);
+            // Suppression du reload automatique - rechargement AJAX
+            // setTimeout(() => window.location.reload(), 1000);
+            loadAlerts();
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erreur lors de la résolution: ' + error.message);
+    });
+}
+
+// Fonction pour recharger les alertes via AJAX
+function loadAlerts() {
+    fetch('/api/alerts')
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour la liste des alertes sans recharger la page
+            updateAlertsList(data.alerts);
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des alertes:', error);
+        });
+}
+
+function updateAlertsList(alerts) {
+    // Logique pour mettre à jour la liste des alertes
+    // Cette fonction peut être implémentée selon les besoins
+    console.log('Alertes mises à jour:', alerts);
+}
+</script>
+{% endblock %} 

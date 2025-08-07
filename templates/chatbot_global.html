@@ -71,7 +71,7 @@
 .chatbot-toggle {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, var(--danone-blue), var(--danone-purple));
+    background: linear-gradient(135deg, var(--danone-blue), var(--danone-dark-blue));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -80,16 +80,20 @@
     box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
     transition: all 0.3s ease;
     position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .chatbot-toggle:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
+    background: linear-gradient(135deg, var(--danone-light-blue), var(--danone-blue));
 }
 
 .chatbot-toggle i {
     color: white;
     font-size: 24px;
+    z-index: 2;
+    position: relative;
 }
 
 .chatbot-badge {
@@ -130,7 +134,7 @@
 
 /* Header */
 .chatbot-header {
-    background: linear-gradient(135deg, var(--danone-blue), var(--danone-purple));
+    background: linear-gradient(135deg, var(--danone-blue), var(--danone-dark-blue));
     color: white;
     padding: 15px;
     display: flex;
@@ -185,7 +189,7 @@
 }
 
 .user-message .message-content {
-    background: linear-gradient(135deg, var(--danone-blue), var(--danone-purple));
+    background: linear-gradient(135deg, var(--danone-blue), var(--danone-dark-blue));
     color: white;
     border-bottom-right-radius: 5px;
 }
@@ -235,9 +239,38 @@
 .chatbot-input .form-control {
     border-radius: 20px;
     border: 1px solid var(--border-color);
-    background: var(--input-bg);
+    background: var(--bg-primary);
     color: var(--text-primary);
     font-size: 13px;
+    padding: 10px 15px;
+}
+
+.chatbot-input .form-control:focus {
+    border-color: var(--danone-blue);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.chatbot-input .form-control::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* Support thème sombre pour input */
+[data-theme="dark"] .chatbot-input .form-control {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .chatbot-input .form-control:focus {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .chatbot-input .form-control::placeholder {
+    color: var(--text-secondary);
 }
 
 .chatbot-input .btn {

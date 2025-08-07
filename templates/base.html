@@ -11,9 +11,24 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Theme CSS -->
+    <!-- Theme CSS Original -->
     <link href="{{ url_for('static', filename='css/theme.css') }}" rel="stylesheet">
+    <!-- Enhanced Theme CSS -->
+    <link href="{{ url_for('static', filename='css/enhanced-theme.css') }}" rel="stylesheet">
+    <!-- Meta Tags -->
     <meta name="theme-color" content="#0066CC">
+    <meta name="description" content="Central Danone - Plateforme de supervision réseau intelligente avec IA">
+    <meta name="keywords" content="Danone, réseau, supervision, monitoring, IA">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="{{ url_for('static', filename='js/enhanced-global.js') }}" as="script">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -200,12 +215,15 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <!-- Navigation Enhanced -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-enhanced">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand d-flex align-items-center" href="/">
                 <i class="fas fa-network-wired me-2"></i>
-                Central Danone - Supervision Réseau
+                <div>
+                    <div class="fw-bold">Central Danone</div>
+                    <small class="opacity-75">Supervision Réseau</small>
+                </div>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -215,91 +233,82 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/" id="nav-dashboard">
-                            <i class="fas fa-tachometer-alt"></i> Tableau de bord
+                        <a class="nav-link nav-link-enhanced" href="/" id="nav-dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/ai-dashboard" id="nav-ai-dashboard">
-                            <i class="fas fa-brain"></i> IA Dashboard
+                        <a class="nav-link nav-link-enhanced" href="/ai-dashboard" id="nav-ai-dashboard">
+                            <i class="fas fa-brain me-2"></i>IA Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/ai-advanced" id="nav-ai-advanced">
-                            <i class="fas fa-robot"></i> IA Avancée
+                        <a class="nav-link nav-link-enhanced" href="/ai-advanced" id="nav-ai-advanced">
+                            <i class="fas fa-robot me-2"></i>IA Avancée
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/alerts" id="nav-alerts">
-                            <i class="fas fa-bell"></i> Alertes
+                        <a class="nav-link nav-link-enhanced" href="/alerts" id="nav-alerts">
+                            <i class="fas fa-bell me-2"></i>Alertes
+                            <span class="badge bg-danger ms-1 alert-count" style="display: none;">0</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/reports" id="nav-reports">
-                            <i class="fas fa-file-alt"></i> Rapports
+                        <a class="nav-link nav-link-enhanced" href="/reports" id="nav-reports">
+                            <i class="fas fa-file-alt me-2"></i>Rapports
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/advanced-monitoring" id="nav-advanced-monitoring">
-                            <i class="fas fa-search-plus"></i> Monitoring Avancé
+                        <a class="nav-link nav-link-enhanced" href="/advanced-monitoring" id="nav-advanced-monitoring">
+                            <i class="fas fa-search-plus me-2"></i>Monitoring
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/settings" id="nav-settings">
-                            <i class="fas fa-cog"></i> Paramètres
+                        <a class="nav-link nav-link-enhanced" href="/settings" id="nav-settings">
+                            <i class="fas fa-cog me-2"></i>Paramètres
                         </a>
                     </li>
                 </ul>
                 
-                <!-- Menu utilisateur et notifications -->
-                <ul class="navbar-nav">
-                    <!-- Notifications en temps réel -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-bell"></i>
-                            <span class="badge bg-danger" id="notification-badge" style="display: none;">0</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
-                            <li><h6 class="dropdown-header">Notifications Central Danone</h6></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <div id="notifications-list">
-                                <li class="dropdown-item text-muted">Aucune notification</li>
-                            </div>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-center" href="#" id="clear-notifications">Effacer toutes</a></li>
-                        </ul>
-                    </li>
-                    
-                    <!-- Menu utilisateur -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-1"></i>
-                            {% if current_user.is_authenticated %}
-                                {{ current_user.username }}
-                                <span class="badge bg-{{ 'primary' if current_user.role == 'admin' else 'secondary' }} ms-1">
-                                    {{ 'Admin' if current_user.role == 'admin' else 'Technicien' }}
-                                </span>
-                            {% else %}
-                                Utilisateur
-                            {% endif %}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><h6 class="dropdown-header">Compte utilisateur</h6></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{{ url_for('change_password') }}">
-                                    <i class="fas fa-key me-2"></i>Changer le mot de passe
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+                <!-- Status Indicators -->
+                <div class="navbar-text d-none d-lg-flex align-items-center me-3">
+                    <div class="d-flex align-items-center me-3" id="connection-status">
+                        <div class="status-indicator bg-success me-2"></div>
+                        <small>En ligne</small>
+                    </div>
+                    <div class="d-flex align-items-center" id="last-update-nav">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        <small id="nav-last-update">--:--</small>
+                    </div>
+                </div>
+                
+                <!-- Theme Toggle -->
+                <div class="d-flex align-items-center me-3">
+                    <div class="theme-switch-container">
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="theme-icon ms-2" id="theme-icon">🌙</span>
+                    </div>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-expanded="false" id="userDropdown">
+                        <i class="fas fa-user me-1"></i>{{ current_user.username if current_user.is_authenticated else 'Admin' }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="/change-password">
+                            <i class="fas fa-key me-2"></i>Changer mot de passe
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                        </a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -315,12 +324,12 @@
                         <a class="nav-link" href="/" id="sidebar-dashboard">
                             <i class="fas fa-tachometer-alt"></i> Tableau de bord
                         </a>
-                                                 <a class="nav-link" href="/ai-dashboard" id="sidebar-ai-dashboard">
-                             <i class="fas fa-brain"></i> IA Dashboard
-                         </a>
-                         <a class="nav-link" href="/ai-advanced" id="sidebar-ai-advanced">
-                             <i class="fas fa-robot"></i> IA Avancée
-                         </a>
+                        <a class="nav-link" href="/ai-dashboard" id="sidebar-ai-dashboard">
+                            <i class="fas fa-brain"></i> IA Dashboard
+                        </a>
+                        <a class="nav-link" href="/ai-advanced" id="sidebar-ai-advanced">
+                            <i class="fas fa-robot"></i> IA Avancée
+                        </a>
                         <a class="nav-link" href="/alerts" id="sidebar-alerts">
                             <i class="fas fa-bell"></i> Alertes
                         </a>
@@ -344,9 +353,24 @@
                 </div>
             </div>
             
-            <!-- Contenu principal -->
+            <!-- Contenu de la page -->
             <div class="col-lg-10">
                 {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+            
+            <!-- PWA Installation Prompt -->
+            <div id="pwa-install-prompt" class="alert alert-info alert-dismissible fade" style="display: none;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-download me-3"></i>
+                    <div class="flex-grow-1">
+                        <strong>Installer l'application</strong><br>
+                        <small>Ajoutez Central Danone à votre écran d'accueil pour un accès rapide</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary me-2" id="pwa-install-btn">Installer</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
             </div>
         </div>
     </div>
@@ -354,10 +378,20 @@
     <!-- Footer -->
     <footer class="footer mt-5">
         <div class="container">
-            <p class="mb-0">
-                <i class="fas fa-shield-alt me-2"></i>
-                Système de supervision réseau Central Danone - Développé pour la continuité de production
-            </p>
+            <div class="row">
+                <div class="col-md-8">
+                    <p class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Système de supervision réseau Central Danone - Développé pour la continuité de production
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <p class="mb-0">
+                        <i class="fas fa-code me-2"></i>
+                        Réalisé par <strong>Mehdi Chmiti</strong> & <strong>Ismail Haddaoui</strong>
+                    </p>
+                </div>
+            </div>
         </div>
     </footer>
 
@@ -383,21 +417,62 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Enhanced Global JS -->
+    <script src="{{ url_for('static', filename='js/enhanced-global.js') }}"></script>
+    
     <!-- Theme JS -->
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     
-    <!-- Scripts communs -->
+    <!-- Enhanced Scripts -->
     <script>
-        // Marquer la page active dans la navigation
+        // Enhanced Navigation avec indicateurs actifs
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.nav-link');
+            const navLinks = document.querySelectorAll('.nav-link-enhanced, .nav-link');
             
             navLinks.forEach(link => {
+                link.classList.remove('active');
                 if (link.getAttribute('href') === currentPath) {
                     link.classList.add('active');
                 }
             });
+            
+            // Mise à jour du temps dans la navigation
+            function updateNavTime() {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-FR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const navTimeElement = document.getElementById('nav-last-update');
+                if (navTimeElement) {
+                    navTimeElement.textContent = timeStr;
+                }
+            }
+            
+            updateNavTime();
+            setInterval(updateNavTime, 60000); // Mise à jour chaque minute
+            
+            // Gestion du status de connexion
+            function updateConnectionStatus() {
+                const statusElement = document.getElementById('connection-status');
+                const statusIndicator = statusElement?.querySelector('.status-indicator');
+                const statusText = statusElement?.querySelector('small');
+                
+                // Test de connectivité simple
+                fetch('/api/devices', { method: 'HEAD' })
+                    .then(() => {
+                        if (statusIndicator) statusIndicator.className = 'status-indicator bg-success me-2';
+                        if (statusText) statusText.textContent = 'En ligne';
+                    })
+                    .catch(() => {
+                        if (statusIndicator) statusIndicator.className = 'status-indicator bg-danger me-2';
+                        if (statusText) statusText.textContent = 'Hors ligne';
+                    });
+            }
+            
+            updateConnectionStatus();
+            setInterval(updateConnectionStatus, 30000); // Vérification toutes les 30s
             
             // Gestion du scan manuel
             document.getElementById('btn-manual-scan').addEventListener('click', function() {

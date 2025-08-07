@@ -2,102 +2,186 @@
 
 {% block title %}Tableau de bord - Central Danone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--danone-blue), var(--danone-dark-blue));
+        color: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-xl);
+        margin-bottom: var(--spacing-lg);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(30px, -30px);
+    }
+    
+    .quick-actions {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-md);
+        border: 1px solid var(--border-color);
+    }
+    
+    .action-btn {
+        border: none;
+        background: linear-gradient(135deg, var(--danone-blue), var(--danone-light-blue));
+        color: white;
+        padding: var(--spacing-sm) var(--spacing-lg);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        margin: var(--spacing-xs);
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+        color: white;
+        background: linear-gradient(135deg, var(--danone-dark-blue), var(--danone-blue));
+    }
+    
+    .alert-summary {
+        border-left: 4px solid var(--danone-red);
+    }
+    
+    .performance-card {
+        background: linear-gradient(135deg, var(--card-bg), var(--bg-secondary));
+        border: none;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <!-- En-tête -->
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 mb-0">
-                    <i class="fas fa-tachometer-alt me-2"></i>
-                    Tableau de bord
-                </h1>
-                <p class="text-muted mb-0">Supervision en temps réel du réseau Central Danone</p>
-            </div>
-            <div class="text-end">
-                <small class="text-muted">Dernière mise à jour</small><br>
-                <span id="last-update">{{ current_time.strftime('%H:%M:%S') if current_time else '--:--:--' }}</span>
-            </div>
+<!-- Enhanced Header -->
+<div class="dashboard-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="h2 mb-2">
+                <i class="fas fa-tachometer-alt me-3"></i>
+                Tableau de bord Central Danone
+            </h1>
+            <p class="mb-0 opacity-90">Supervision intelligente en temps réel avec IA intégrée</p>
         </div>
-    </div>
-</div>
-
-<!-- Statistiques -->
-<div class="row mb-4">
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number text-primary">{{ total_devices }}</div>
-                <div class="stat-label">Total des équipements</div>
-                <i class="fas fa-network-wired text-muted mt-2"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number text-success">{{ online_devices }}</div>
-                <div class="stat-label">En ligne</div>
-                <i class="fas fa-check-circle text-success mt-2"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number text-danger">{{ offline_devices }}</div>
-                <div class="stat-label">Hors ligne</div>
-                <i class="fas fa-times-circle text-danger mt-2"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number text-info">{{ availability_percentage }}%</div>
-                <div class="stat-label">Disponibilité</div>
-                <i class="fas fa-chart-line text-info mt-2"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number 
-                    {% if avg_health_score >= 80 %}text-success
-                    {% elif avg_health_score >= 60 %}text-warning
-                    {% else %}text-danger{% endif %}">
-                    {{ avg_health_score }}%
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex flex-column align-items-md-end">
+                <div class="quick-actions mb-2">
+                    <a href="/api/scan-production" class="action-btn" onclick="startQuickScan(event)">
+                        <i class="fas fa-search me-2"></i>Scan Rapide
+                    </a>
+                    <a href="/ai-dashboard" class="action-btn">
+                        <i class="fas fa-brain me-2"></i>IA Dashboard
+                    </a>
                 </div>
-                <div class="stat-label">Score Santé IA</div>
-                <i class="fas fa-brain text-primary mt-2"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-2 col-md-6 mb-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="stat-number text-danger">{{ critical_devices }}</div>
-                <div class="stat-label">Critiques IA</div>
-                <i class="fas fa-exclamation-triangle text-danger mt-2"></i>
+                <div class="text-white-50">
+                    <small>Dernière mise à jour</small><br>
+                    <span id="last-update" class="fw-bold">{{ current_time.strftime('%H:%M:%S') if current_time else '--:--:--' }}</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Graphiques et alertes -->
+<!-- Enhanced Statistics -->
 <div class="row mb-4">
-    <!-- Graphique de disponibilité -->
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced">{{ total_devices }}</div>
+            <div class="stat-label-enhanced">Total Équipements</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-network-wired text-primary" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced text-success">{{ online_devices }}</div>
+            <div class="stat-label-enhanced">En Ligne</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-check-circle text-success" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced text-danger">{{ offline_devices }}</div>
+            <div class="stat-label-enhanced">Hors Ligne</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-times-circle text-danger" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced text-info">{{ availability_percentage }}%</div>
+            <div class="stat-label-enhanced">Disponibilité</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-chart-line text-info" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced 
+                {% if avg_health_score >= 80 %}text-success
+                {% elif avg_health_score >= 60 %}text-warning
+                {% else %}text-danger{% endif %}">
+                {{ avg_health_score }}%
+            </div>
+            <div class="stat-label-enhanced">Score Santé IA</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-brain text-primary" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-2 col-md-6 mb-3">
+        <div class="stat-card-enhanced">
+            <div class="stat-number-enhanced text-danger">{{ critical_devices }}</div>
+            <div class="stat-label-enhanced">Critiques IA</div>
+            <div class="text-center mt-2">
+                <i class="fas fa-exclamation-triangle text-danger" style="font-size: 1.5rem;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dashboard Content -->
+<div class="row mb-4">
+    <!-- Enhanced Chart -->
     <div class="col-lg-8 mb-3">
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-chart-area me-2"></i>
-                Évolution de la disponibilité (7 derniers jours)
+        <div class="card card-enhanced performance-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-chart-area me-2"></i>
+                    Performance Réseau (7 derniers jours)
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-filter me-1"></i>Filtres
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="filterChart('all')">Tous les équipements</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterChart('critical')">Équipements critiques</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="filterChart('servers')">Serveurs uniquement</a></li>
+                    </ul>
+                </div>
             </div>
             <div class="card-body">
                 <canvas id="uptimeChart" height="100"></canvas>
@@ -161,6 +245,9 @@
                     </button>
                     <button class="btn btn-sm btn-outline-success" onclick="scanAllNetworks()">
                         <i class="fas fa-network-wired"></i> Scanner tous les réseaux
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="scanUniversal()" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); color: white; border: none;">
+                        <i class="fas fa-globe"></i> 🌍 Scan Universel
                     </button>
                     <div class="btn-group btn-group-sm" role="group">
                         <input type="radio" class="btn-check" name="filter" id="filter-all" checked>
@@ -438,38 +525,69 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal.show();
                 })
                 .catch(error => {
+                    console.error('Erreur lors de la mise à jour:', error);
+                });
+        });
+    });
+    
+    // Informations détaillées d'un appareil
+    document.querySelectorAll('.btn-device-info').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const deviceId = this.dataset.deviceId;
+            const modal = new bootstrap.Modal(document.getElementById('deviceInfoModal'));
+            
+            // Charger les informations de l'appareil
+            fetch(`/api/devices/${deviceId}`)
+                .then(response => response.json())
+                .then(device => {
+                    const content = document.getElementById('device-info-content');
+                    content.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Informations générales</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Adresse IP:</td><td><strong>${device.ip}</strong></td></tr>
+                                    <tr><td>Nom d'hôte:</td><td>${device.hostname || 'N/A'}</td></tr>
+                                    <tr><td>Adresse MAC:</td><td>${device.mac || 'N/A'}</td></tr>
+                                    <tr><td>Type d'appareil:</td><td>${device.device_type || 'Unknown'}</td></tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Statut</h6>
+                                <table class="table table-sm">
+                                    <tr><td>Statut actuel:</td><td>
+                                        <span class="badge ${device.is_online ? 'bg-success' : 'bg-danger'}">
+                                            ${device.is_online ? 'En ligne' : 'Hors ligne'}
+                                        </span>
+                                    </td></tr>
+                                    <tr><td>Dernière vue:</td><td>${formatDate(device.last_seen)}</td></tr>
+                                    <tr><td>Créé le:</td><td>${formatDate(device.created_at)}</td></tr>
+                                    <tr><td>Mis à jour:</td><td>${formatDate(device.updated_at)}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    modal.show();
+                })
+                .catch(error => {
                     showAlert('danger', 'Erreur lors du chargement des informations: ' + error.message);
                 });
         });
     });
     
-    // Actualisation des appareils
-    document.getElementById('btn-refresh-devices').addEventListener('click', function() {
-        const button = this;
-        const originalHTML = button.innerHTML;
-        
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualisation...';
-        button.disabled = true;
-        
-        // Suppression du reload automatique - utilisation de refreshData() à la place
-        // setTimeout(() => {
-        //     window.location.reload();
-        // }, 1000);
-        
-        // Utiliser la fonction refreshData personnalisée
-        refreshData();
-        button.innerHTML = originalHTML;
-        button.disabled = false;
-    });
-    
-    // Mise à jour de l'heure de dernière mise à jour
-    function updateLastUpdate() {
-        const now = new Date();
-        document.getElementById('last-update').textContent = now.toLocaleTimeString('fr-FR');
+    // Fonction pour formater les dates
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
     }
     
-    // Mettre à jour l'heure toutes les secondes
-    setInterval(updateLastUpdate, 1000);
+    // Initialiser la mise à jour du temps
+    // Utiliser la fonction globale de enhanced-global.js
+    if (typeof updateLastUpdate === 'function') {
+        updateLastUpdate();
+        setInterval(updateLastUpdate, 1000);
+    }
     
     // Mise à jour automatique des données toutes les 30 secondes
     setInterval(function() {
@@ -495,62 +613,82 @@ window.scanAllNetworks = function() {
     .then(data => {
         if (data.status === 'success') {
             showAlert('success', 'Scan multi-réseaux lancé avec succès !');
-            // Suppression du reload automatique - les données se mettent à jour via AJAX
-            // setTimeout(() => window.location.reload(), 3000);
         } else {
             showAlert('danger', data.message);
         }
     })
     .catch(error => {
-        showAlert('danger', 'Erreur lors du scan: ' + error.message);
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors du lancement du scan');
     })
     .finally(() => {
-        button.innerHTML = originalHTML;
-        button.disabled = false;
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }, 3000);
+    });
+};
+
+// Fonction pour le scan universel ultra-puissant (scope global)
+window.scanUniversal = function() {
+    const button = event.target.closest('button');
+    const originalHTML = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 🌍 Scan Universel...';
+    button.disabled = true;
+    
+    // Notification spéciale pour le scan universel
+    showAlert('info', '🌍 SCAN UNIVERSEL démarré ! Détection maximale pour téléphones OPPO, TV Samsung et tous équipements...');
+    
+    fetch('/api/scan-universal', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showAlert('success', '🎯 ' + data.message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors du lancement du scan universel');
+    })
+    .finally(() => {
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        }, 5000); // 5 secondes pour le scan universel (plus long)
     });
 };
 
 // Fonction de rafraîchissement personnalisée pour cette page
 window.refreshData = function() {
-        // Recharger seulement les données critiques
-        fetch('/api/statistics')
-            .then(response => response.json())
-            .then(data => {
-                // Mettre à jour les statistiques
-                document.querySelector('.stat-number.text-primary').textContent = data.total_devices;
-                document.querySelector('.stat-number.text-success').textContent = data.online_devices;
-                document.querySelector('.stat-number.text-danger').textContent = data.offline_devices;
-                
-                const uptimePercentage = data.uptime_percentage;
-                const uptimeElement = document.querySelector('.stat-number.text-info');
-                if (uptimeElement) {
-                    uptimeElement.textContent = uptimePercentage.toFixed(1) + '%';
-                }
-                
-                // Mettre à jour le score santé IA
-                const healthElement = document.querySelector('.stat-number:not(.text-primary):not(.text-success):not(.text-danger):not(.text-info)');
-                if (healthElement && data.avg_health_score !== undefined) {
-                    healthElement.textContent = data.avg_health_score.toFixed(1) + '%';
-                }
-                
-                // Mettre à jour les appareils critiques IA
-                const criticalElement = document.querySelector('.stat-number.text-danger:last-child');
-                if (criticalElement && data.critical_devices !== undefined) {
-                    criticalElement.textContent = data.critical_devices;
-                }
-                
+    // Recharger seulement les données critiques
+    fetch('/api/statistics')
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour les statistiques
+            if (typeof updateLastUpdate === 'function') {
                 updateLastUpdate();
-                
-                // Ajouter un indicateur visuel de mise à jour
-                const updateIndicator = document.getElementById('last-update');
+            }
+            
+            // Ajouter un indicateur visuel de mise à jour
+            const updateIndicator = document.getElementById('last-update');
+            if (updateIndicator) {
                 updateIndicator.style.color = '#28a745';
                 setTimeout(() => {
                     updateIndicator.style.color = '';
                 }, 2000);
-            })
-            .catch(error => {
-                console.error('Erreur lors de la mise à jour:', error);
-            });
-    };
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la mise à jour:', error);
+        });
+};
 </script>
 {% endblock %} 

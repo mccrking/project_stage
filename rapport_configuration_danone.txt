@@ -1,0 +1,30 @@
+
+RAPPORT DE CONFIGURATION - SURVEILLANCE RÉSEAU DANONE
+=====================================================
+Date de configuration: 2025-08-05T18:55:17.141236
+Configuré par: Technicien IT
+Environnement: production
+
+RÉSUMÉ DE LA SURVEILLANCE:
+- Équipements surveillés: 1
+- Réseaux couverts: 1
+- Notifications email: Activées
+- Fréquence des rapports: daily
+
+ÉQUIPEMENTS CONFIGURÉS:
+
+ 1. 192.168.121.1   - LAPTOP-SD63F258
+    Type: workstation
+    Priorité: low
+    Seuil de réponse: 500ms
+    Intervalle de scan: 1800s
+    Ports surveillés: 5432, 8080
+
+PROCHAINES ÉTAPES:
+1. Importez le fichier 'danone_monitoring_config.json' dans votre système de surveillance
+2. Configurez vos paramètres email dans l'interface web
+3. Testez les notifications d'alerte
+4. Planifiez la maintenance préventive
+
+SUPPORT TECHNIQUE:
+En cas de problème, consultez la documentation ou contactez l'équipe IT.

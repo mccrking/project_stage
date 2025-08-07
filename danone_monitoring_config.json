@@ -1,0 +1,38 @@
+{
+  "monitoring_config": {
+    "created_at": "2025-08-05T18:55:17.136932",
+    "total_devices": 1,
+    "networks_monitored": [
+      "192.168.121.0/24"
+    ],
+    "devices": [
+      {
+        "ip": "192.168.121.1",
+        "hostname": "LAPTOP-SD63F258",
+        "type": "workstation",
+        "priority": "low",
+        "alert_config": {
+          "ping_monitoring": true,
+          "port_monitoring": true,
+          "response_time_threshold": 500,
+          "notification_level": "summary"
+        },
+        "monitoring_ports": [
+          5432,
+          8080
+        ],
+        "scan_interval": 1800,
+        "auto_configured": true
+      }
+    ]
+  },
+  "danone_config": {
+    "plant_name": "Usine Danone",
+    "configured_by": "Technicien IT",
+    "configuration_date": "2025-08-05T18:55:17.141236",
+    "environment": "production",
+    "email_notifications": true,
+    "sms_notifications": false,
+    "report_frequency": "daily"
+  }
+}

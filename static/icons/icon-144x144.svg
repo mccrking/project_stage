@@ -1,0 +1,7 @@
+<svg width="144" height="144" viewBox="0 0 144 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="144" height="144" rx="20" fill="#0066CC"/>
+<path d="M36 72C36 52.1177 52.1177 36 72 36C91.8823 36 108 52.1177 108 72C108 91.8823 91.8823 108 72 108C52.1177 108 36 91.8823 36 72Z" fill="white"/>
+<path d="M54 63L72 81L90 63" stroke="#0066CC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="72" cy="54" r="3" fill="#0066CC"/>
+<text x="72" y="126" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">Danone</text>
+</svg>
