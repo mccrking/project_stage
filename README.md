@@ -1,8 +1,8 @@
-# 🏭 Dashboard Danone - Plateforme de Supervision Réseau
+# 🏭 Dashboard - Plateforme de Supervision Réseau
 
 ## 📋 Description
 
-Plateforme de supervision réseau développée pour Danone, permettant la surveillance en temps réel des équipements réseau dans un environnement industriel. Cette application offre une interface web moderne et intuitive pour les techniciens et administrateurs réseau.
+Plateforme de supervision réseau développée pour industrie, permettant la surveillance en temps réel des équipements réseau dans un environnement industriel. Cette application offre une interface web moderne et intuitive pour les techniciens et administrateurs réseau.
 
 ## ✨ Fonctionnalités Principales
 
@@ -112,27 +112,6 @@ python app.py
 - **Utilisateur** : admin
 - **Mot de passe** : admin123
 
-## 📁 Structure du Projet
-
-```
-dashbord_danone/
-├── app.py                 # Application principale Flask
-├── config.py             # Configuration de l'application
-├── requirements.txt      # Dépendances Python
-├── settings_manager.py   # Gestionnaire de paramètres
-├── templates/            # Templates HTML
-│   ├── base.html
-│   ├── dashboard.html
-│   ├── ai_dashboard.html
-│   ├── alerts.html
-│   ├── reports.html
-│   ├── settings.html
-│   └── login.html
-├── static/               # Fichiers statiques (CSS, JS)
-├── reports/              # Rapports générés
-├── logs/                 # Fichiers de logs
-└── ai_models/            # Modèles IA sauvegardés
-```
 
 ## 🔧 Configuration
 
@@ -194,21 +173,12 @@ dashbord_danone/
 - Rapports conservés dans `reports/`
 - Modèles IA sauvegardés dans `ai_models/`
 
-## 🤝 Contribution
-
-Ce projet a été développé dans le cadre d'un stage chez Danone. Pour toute question ou amélioration, contactez l'équipe de développement.
-
-## 📄 Licence
-
-Projet développé pour Danone - Tous droits réservés.
 
 ## 👥 Auteurs
-
-- **Équipe de développement** - Stage Danone
-- **Supervision** - Équipe IT Danone
+- **Supervision** - Équipe IT 
 
 ---
 
 **Version** : 1.0.0  
-**Dernière mise à jour** : Janvier 2025  
+**Dernière mise à jour** : ******
 **Statut** : Production Ready ✅ 
